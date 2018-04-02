@@ -184,9 +184,6 @@ class RedisLibrary:
     def searchByName(self, name):
         return BrowserProxy.getBrowsers(getRedis().smembers('browser:name-'+name))
 
-    def searchByUsername(self, username):
-        return BrowserProxy(username).fetch()
-
     def checkoutBook(self, username, book_id):
         BookProxy(book_id).setCheckoutby(username)
 
