@@ -115,8 +115,10 @@ class BrowserProxy:
         return BrowserProxy.keyToBrowser(self.browser_key)
     
     def edit(self, browser):
-        self.setName(browser.name)
-        self.setPhone(browser.phone)
+        if browser.name:
+            self.setName(browser.name)
+        if browser.phone:
+            self.setPhone(browser.phone)
 
     def delete(self):
         getRedis().delete(self.browser_key)
@@ -173,11 +175,11 @@ class RedisLibrary:
     def getBrowser(self, username):
         return BrowserProxy(username).fetch()
 
-    def deleteBrowser(self, browser_username):
-        BrowserProxy(browser.username).delete()
+    def deleteBrowser(self, username):
+        BrowserProxy(username).delete()
 
     def editBrowser(self, username, browser):
-        BrowserProxy(browser.username).edit(browser)
+        BrowserProxy(username).edit(browser)
 
     def searchByName(self, name):
         return BrowserProxy.getBrowsers(getRedis().smembers('browser:name-'+name))
