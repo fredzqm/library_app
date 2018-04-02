@@ -1,25 +1,25 @@
 import redis
-from lib.library import Book, Browser
+from lib.library import Book, Borrower
 
 conn = redis.Redis()
 
-def getRedis():
+def get_redis():
     return conn
 
-def parseDict(dict, key):
+def parse_dict(dict, key):
     if key in dict:
         return str(dict.get(key), 'utf-8')
     return None
 
-def setHashAndUpdateSetReference(hash_key, entity, set_prefix, value):
-    v = getRedis().hget(hash_key, entity)
+def set_hash_and_update_set_reference(hash_key, entity, set_prefix, value):
+    v = get_redis().hget(hash_key, entity)
     if v:
         if not value:
-            getRedis().hdel(hash_key, entity)
-        getRedis().srem(set_prefix+str(v), hash_key)
+            get_redis().hdel(hash_key, entity)
+        get_redis().srem(set_prefix+str(v), hash_key)
     if value:
-        getRedis().hset(hash_key, entity, value)
-        getRedis().sadd(set_prefix+value, hash_key)
+        get_redis().hset(hash_key, entity, value)
+        get_redis().sadd(set_prefix+value, hash_key)
 
 class BookProxy:
     def __init__(self, book_id):
@@ -28,174 +28,173 @@ class BookProxy:
 
     @staticmethod
     def add():
-        bookproxy = BookProxy(getRedis().incr('book:count'))
-        getRedis().sadd('book:keys', bookproxy.book_key)
+        bookproxy = BookProxy(get_redis().incr('book:count'))
+        get_redis().sadd('book:keys', bookproxy.book_key)
         return bookproxy
 
     @staticmethod
-    def keyToBook(key):
-        dict = getRedis().hgetall(key)
+    def key_to_Book(key):
+        dict = get_redis().hgetall(key)
         if type(key) != str:
             key = str(key, 'utf-8')
         if len(dict) == 0:
             return None
-        return Book(id=key[5:],
-            title=parseDict(dict, b'title'),
-            author=parseDict(dict, b'author'),
-            isbn=parseDict(dict, b'isbn'),
-            page_num=int(parseDict(dict, b'page_num')),
-            checkoutby=parseDict(dict, b'checkoutby'))
+        return Book(id=key[6:],
+            title=parse_dict(dict, b'title'),
+            author=parse_dict(dict, b'author'),
+            isbn=parse_dict(dict, b'isbn'),
+            page_num=int(parse_dict(dict, b'page_num')),
+            checkoutby=parse_dict(dict, b'checkoutby'))
 
     @staticmethod
     def getBooks(book_keys):
-        return [BookProxy.keyToBook(key) for key in book_keys]
+        return [BookProxy.key_to_Book(key) for key in book_keys]
 
     def fetch(self):
-        return BookProxy.keyToBook(self.book_key)
+        return BookProxy.key_to_Book(self.book_key)
     
     def edit(self, book):
         if book.title:
-            self.setTitle(book.title)
+            self.set_title(book.title)
         if book.author:
-            self.setAuthor(book.author)
+            self.set_author(book.author)
         if book.isbn:
-            self.setIsbn(book.isbn)
+            self.set_isbn(book.isbn)
         if book.page_num:
-            self.setPageNum(book.page_num)
+            self.set_page_num(book.page_num)
         if book.checkoutby:
-            self.setCheckoutby(book.checkoutby)
+            self.set_checkoutby(book.checkoutby)
 
     def delete(self):
-        getRedis().delete(self.book_key)
-        getRedis().srem('book:keys', self.book_key)
-        self.setTitle(None)
-        self.setAuthor(None)
-        self.setIsbn(None)
-        self.setPageNum(None)
-        self.setCheckoutby(None)
+        get_redis().delete(self.book_key)
+        get_redis().srem('book:keys', self.book_key)
+        self.set_title(None)
+        self.set_author(None)
+        self.set_isbn(None)
+        self.set_page_num(None)
+        self.set_checkoutby(None)
 
-    def setTitle(self, title):
-        setHashAndUpdateSetReference(self.book_key, 'title', 'book:title-', title)
+    def set_title(self, title):
+        set_hash_and_update_set_reference(self.book_key, 'title', 'book:title-', title)
 
-    def setAuthor(self, author):
-        setHashAndUpdateSetReference(self.book_key, 'author', 'book:author-', author)
+    def set_author(self, author):
+        set_hash_and_update_set_reference(self.book_key, 'author', 'book:author-', author)
 
-    def setIsbn(self, isbn):
-        setHashAndUpdateSetReference(self.book_key, 'isbn', 'book:isbn-', isbn)
+    def set_isbn(self, isbn):
+        set_hash_and_update_set_reference(self.book_key, 'isbn', 'book:isbn-', isbn)
 
-    def setPageNum(self, page_num):
+    def set_page_num(self, page_num):
         if page_num:
-            getRedis().hset(self.book_key, 'page_num', page_num)
+            get_redis().hset(self.book_key, 'page_num', page_num)
 
-    def setCheckoutby(self, checkoutby):
-        setHashAndUpdateSetReference(self.book_key, 'checkoutby', 'book:checkoutby-', checkoutby)
+    def set_checkoutby(self, checkoutby):
+        set_hash_and_update_set_reference(self.book_key, 'checkoutby', 'book:checkoutby-', checkoutby)
 
 
-class BrowserProxy:
+class BorrowerProxy:
     def __init__(self, username):
         self.username = username
-        self.browser_key = 'browser:'+ username
+        self.borrower_key = 'borrower:'+ username
 
     @staticmethod
-    def keyToBrowser(key):
-        dict = getRedis().hgetall(key)
+    def key_to_borrower(key):
+        dict = get_redis().hgetall(key)
         if len(dict) == 0:
             return None
         if type(key) != str:
             key = str(key, 'utf-8')
-        return Browser(username=key[8:],
-                name=parseDict(dict, b'name'),
-                phone=parseDict(dict, b'phone'))
+        return Borrower(username=key[9:],
+                name=parse_dict(dict, b'name'),
+                phone=parse_dict(dict, b'phone'))
 
     @staticmethod
-    def getBrowsers(browser_keys):
-        return [BrowserProxy.keyToBrowser(key) for key in browser_keys]
+    def get_borrowers(borrower_keys):
+        return [BorrowerProxy.key_to_borrower(key) for key in borrower_keys]
 
     def fetch(self):
-        return BrowserProxy.keyToBrowser(self.browser_key)
+        return BorrowerProxy.key_to_borrower(self.borrower_key)
     
-    def edit(self, browser):
-        if browser.name:
-            self.setName(browser.name)
-        if browser.phone:
-            self.setPhone(browser.phone)
+    def edit(self, borrower):
+        if borrower.name:
+            self.set_name(borrower.name)
+        if borrower.phone:
+            self.set_phone(borrower.phone)
 
     def delete(self):
-        getRedis().delete(self.browser_key)
-        self.setName(None)
-        self.setPhone(None)
+        get_redis().delete(self.borrower_key)
+        self.set_name(None)
+        self.set_phone(None)
 
-    def setName(self, name):
-        setHashAndUpdateSetReference(self.browser_key, 'name', 'browser:name-', name)
+    def set_name(self, name):
+        set_hash_and_update_set_reference(self.borrower_key, 'name', 'borrower:name-', name)
 
-    def setPhone(self, phone):
+    def set_phone(self, phone):
         if phone:
-            getRedis().hset(self.browser_key, 'phone', phone)
+            get_redis().hset(self.borrower_key, 'phone', phone)
 
 class RedisLibrary:
-    def addBook(self, book):
+    def add_book(self, book):
         # book:count stored the largets book id that can exist
         bookproxy = BookProxy.add()
         bookproxy.edit(book)
         book.id = bookproxy.book_id
 
-    def getBook(self, book_id):
+    def get_book(self, book_id):
         return BookProxy(book_id).fetch()
 
-    def deleteBook(self, book_id):
+    def delete_book(self, book_id):
         BookProxy(book_id).delete()
 
-    def editBook(self, book_id, book):
+    def edit_book(self, book_id, book):
         BookProxy(book_id).edit(book)
 
-    def searchByTitle(self, title):
-        return BookProxy.getBooks(getRedis().smembers('book:title-'+title))
+    def search_by_title(self, title):
+        return BookProxy.getBooks(get_redis().smembers('book:title-'+title))
 
-    def searchByAuthor(self, author):
-        return BookProxy.getBooks(getRedis().smembers('book:author-'+author))
+    def search_by_author(self, author):
+        return BookProxy.getBooks(get_redis().smembers('book:author-'+author))
 
-    def searchByIsbn(self, isbn):
-        return BookProxy.getBooks(getRedis().smembers('book:isbn-'+isbn))
+    def search_by_isbn(self, isbn):
+        return BookProxy.getBooks(get_redis().smembers('book:isbn-'+isbn))
 
-    def sortByTitle(self): # return all books
-        return BookProxy.getBooks(getRedis().sort('book:keys', by='*->title', alpha=True))
+    def sort_by_title(self): # return all books
+        return BookProxy.getBooks(get_redis().sort('book:keys', by='*->title', alpha=True))
 
-    def sortByAuthor(self): # return all books
-        return BookProxy.getBooks(getRedis().sort('book:keys', by='*->author', alpha=True))
+    def sort_by_author(self): # return all books
+        return BookProxy.getBooks(get_redis().sort('book:keys', by='*->author', alpha=True))
 
-    def sortByIsbn(self): # return all books
-        return BookProxy.getBooks(getRedis().sort('book:keys', by='*->isbn', alpha=True))
+    def sort_by_isbn(self): # return all books
+        return BookProxy.getBooks(get_redis().sort('book:keys', by='*->isbn', alpha=True))
 
-    def sortByPageNum(self): # return all books
-        return BookProxy.getBooks(getRedis().sort('book:keys', by='*->page_num', alpha=True))
+    def sort_by_page_num(self): # return all books
+        return BookProxy.getBooks(get_redis().sort('book:keys', by='*->page_num', alpha=True))
 
-    def addBrowser(self, browser):
-        BrowserProxy(browser.username).edit(browser)
+    def add_borrower(self, borrower):
+        BorrowerProxy(borrower.username).edit(borrower)
 
-    def getBrowser(self, username):
-        return BrowserProxy(username).fetch()
+    def get_borrower(self, username):
+        return BorrowerProxy(username).fetch()
 
-    def deleteBrowser(self, username):
-        BrowserProxy(username).delete()
+    def delete_borrower(self, username):
+        BorrowerProxy(username).delete()
 
-    def editBrowser(self, username, browser):
-        BrowserProxy(username).edit(browser)
+    def edit_borrower(self, username, borrower):
+        BorrowerProxy(username).edit(borrower)
 
-    def searchByName(self, name):
-        return BrowserProxy.getBrowsers(getRedis().smembers('browser:name-'+name))
+    def search_by_name(self, name):
+        return BorrowerProxy.get_borrowers(get_redis().smembers('borrower:name-'+name))
 
-    def checkoutBook(self, username, book_id):
-        BookProxy(book_id).setCheckoutby(username)
+    def checkout_book(self, username, book_id):
+        BookProxy(book_id).set_checkoutby(username)
 
-    def returnBook(self, username, book_id):
-        BookProxy(book_id).setCheckoutby(None)
+    def return_book(self, username, book_id):
+        BookProxy(book_id).set_checkoutby(None)
 
-    def getBookCheckedOutBy(self, checkoutby):
-        bookIds = getRedis().smembers('book:checkoutby-'+checkoutby)
-        return [BookProxy(id).fetch() for id in bookIds]
+    def get_book_checkedoutby(self, checkoutby):
+        return BookProxy.getBooks(get_redis().smembers('book:checkoutby-'+checkoutby))
 
-    def getBrowserHas(self, book_id):
+    def get_borrower_has(self, book_id):
         checkoutby = BookProxy(book_id).fetch().checkoutby
         if checkoutby:
-            return BrowserProxy(checkoutby).fetch()
+            return BorrowerProxy(checkoutby).fetch()
         return None
