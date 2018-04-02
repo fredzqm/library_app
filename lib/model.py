@@ -1,5 +1,3 @@
-import redis
-
 class Book:
     def __init__(self, id=None, title=None, author=None, isbn=None, page_num=None, checkoutby=None):
         if page_num != None and type(page_num) != int:
@@ -42,3 +40,65 @@ class Borrower:
 
     def __hash__(self):
         return hash(str(self))
+
+
+class RedisLibrary:
+    def add_book(self, book):
+        raise NotImplementedError()
+
+    def get_book(self, book_id):
+        raise NotImplementedError()
+
+    def delete_book(self, book_id):
+        raise NotImplementedError()
+
+    def edit_book(self, book_id, book):
+        raise NotImplementedError()
+
+    def search_by_title(self, title):
+        raise NotImplementedError()
+
+    def search_by_author(self, author):
+        raise NotImplementedError()
+
+    def search_by_isbn(self, isbn):
+        raise NotImplementedError()
+
+    def sort_by_title(self): # return all books
+        raise NotImplementedError()
+
+    def sort_by_author(self): # return all books
+        raise NotImplementedError()
+
+    def sort_by_isbn(self): # return all books
+        raise NotImplementedError()
+
+    def sort_by_page_num(self): # return all books
+        raise NotImplementedError()
+
+    def add_borrower(self, borrower):
+        raise NotImplementedError()
+
+    def get_borrower(self, username):
+        raise NotImplementedError()
+
+    def delete_borrower(self, username):
+        raise NotImplementedError()
+
+    def edit_borrower(self, username, borrower):
+        raise NotImplementedError()
+
+    def search_by_name(self, name):
+        raise NotImplementedError()
+
+    def checkout_book(self, username, book_id):
+        raise NotImplementedError()
+
+    def return_book(self, username, book_id):
+        raise NotImplementedError()
+
+    def get_book_checkedoutby(self, checkoutby):
+        raise NotImplementedError()
+
+    def get_borrower_has(self, book_id):
+        raise NotImplementedError()
