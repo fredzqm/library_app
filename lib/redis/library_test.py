@@ -1,6 +1,6 @@
 import unittest
-from redislibrary import *
-from lib.librarytest import LibraryTest
+from lib.redis.library import get_redis, RedisLibrary
+from lib.library_test import LibraryTest
 
 class RedisLibraryTest(LibraryTest, unittest.TestCase):
 
@@ -9,5 +9,3 @@ class RedisLibraryTest(LibraryTest, unittest.TestCase):
 		get_redis().flushall()
 		super(LibraryTest, self).setUp()
 
-if __name__=='__main__':
-	unittest.main()

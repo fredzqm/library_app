@@ -1,5 +1,5 @@
 import redis
-from lib.library import Book, Borrower
+from lib.model import Book, Borrower
 
 conn = redis.Redis()
 

@@ -1,4 +1,4 @@
-from lib.library import Book, Borrower
+from lib.model import Book, Borrower
 from copy import copy
 
 book_toadd = Book(title='book title', author='Sriram', isbn='10000', page_num=200)
