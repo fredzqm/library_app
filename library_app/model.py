@@ -42,7 +42,10 @@ class Borrower:
         return hash(str(self))
 
 
-class RedisLibrary:
+class Library:
+    def drop_db(self):
+        raise NotImplementedError()
+
     def add_book(self, book):
         raise NotImplementedError()
 

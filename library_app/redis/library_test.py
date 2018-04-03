@@ -6,6 +6,4 @@ class RedisLibraryTest(LibraryTest, unittest.TestCase):
 
 	def setUpClient(self):
 		self.client = RedisLibrary()
-		get_redis().flushall()
-		super(LibraryTest, self).setUp()
 

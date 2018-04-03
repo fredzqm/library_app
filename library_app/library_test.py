@@ -18,6 +18,7 @@ class LibraryTest(object):
 	def setUp(self):
 		if self.setUpClient:
 			self.setUpClient()
+		self.client.drop_db()
 		self.client.add_book(book_toadd)
 		self.client.add_borrower(browser_toadd)
 

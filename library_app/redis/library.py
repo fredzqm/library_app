@@ -133,6 +133,9 @@ class BorrowerProxy:
             get_redis().hset(self.borrower_key, 'phone', phone)
 
 class RedisLibrary:
+    def drop_db(self):
+        get_redis().flushall()
+
     def add_book(self, book):
         # book:count stored the largets book id that can exist
         bookproxy = BookProxy.add()
