@@ -1,7 +1,7 @@
 class Book:
     def __init__(self, id=None, title=None, author=None, isbn=None, page_num=None, checkoutby=None):
         if page_num != None and type(page_num) != int:
-            raise Exception('page number need to be an integer')
+            page_num = int(page_num)
         self.id = id
         self.title = title
         self.author = author

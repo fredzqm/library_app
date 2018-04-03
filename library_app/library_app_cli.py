@@ -21,7 +21,6 @@ def drop_db(config):
     config.client.drop_db()
     click.echo('The database {0} is dropped', type(config.client))
 
-
 @cli.command()
 @click.option('--title', '-b', default=None, help='The title of the book')
 @click.option('--author', '-a', default=None, help='The author of the book')
