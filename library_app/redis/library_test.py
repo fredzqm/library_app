@@ -1,6 +1,6 @@
 import unittest
-from lib.redis.library import get_redis, RedisLibrary
-from lib.library_test import LibraryTest
+from library_app.redis.library import get_redis, RedisLibrary
+from library_app.library_test import LibraryTest
 
 class RedisLibraryTest(LibraryTest, unittest.TestCase):
 
