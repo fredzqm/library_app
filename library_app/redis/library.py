@@ -206,7 +206,6 @@ class RedisLibrary:
     '''
         return False if user already existed
     '''
-
     def add_borrower(self, borrower):
         proxy = BorrowerProxy(borrower.username)
         if proxy.exists():
@@ -264,7 +263,9 @@ class RedisLibrary:
         return BookProxy.getBooks(get_redis().smembers('book:checkoutby-' + checkoutby))
 
     def get_borrower_has(self, book_id):
-        checkoutby = BookProxy(book_id).fetch().checkoutby
-        if checkoutby:
-            return BorrowerProxy(checkoutby).fetch()
-        return None
+        book = BookProxy(book_id).fetch()
+        if not book:
+            return None, 'book_not_exist'
+        if book.checkoutby:
+            return BorrowerProxy(book.checkoutby).fetch()
+        return None, 'book_not_checkedout'

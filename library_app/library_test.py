@@ -192,8 +192,7 @@ class LibraryTest(object):
         self.assertTrue(self.client.checkout_book('zhangq2', '1'))
         self.assertTrue(self.client.return_book('zhangq2', '1'))
 
-        broswer = self.client.get_borrower_has('1')
-        self.assertEqual(broswer, None)
+        self.assertTupleEqual(self.client.get_borrower_has('1'), (None, 'book_not_checkedout'))
 
         books_checkedout = self.client.get_book_checkedoutby('zhangq2')
         self.assertListEqual(books_checkedout, [])
@@ -210,3 +209,5 @@ class LibraryTest(object):
     def test_return_book_not_checkedout(self):
         self.assertTupleEqual(self.client.return_book('zhangq2', '1'), (False, 'book_not_checkedout'))
 
+    def test_get_borrower_has(self):
+        self.assertTupleEqual(self.client.get_borrower_has('non_exist_book'), (None, 'book_not_exist'))

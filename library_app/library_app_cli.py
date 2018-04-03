@@ -7,7 +7,6 @@ from .model import Book, Borrower
 
 config = click.make_pass_decorator(Config, ensure=True)
 
-
 @click.group()
 @click.option('--backend', '-b', is_flag=True, required=True, help='Specify the backend of this library')
 @click.pass_context
@@ -43,8 +42,11 @@ def get_book(config, id):
 @click.argument('id', required=True)
 @config
 def delete_book(config, id):
-    config.client.delete_book(id)
-    click.echo('The book with id {0} is deleted'.format(id))
+    success = config.client.delete_book(id)
+    if success:
+        click.echo('The book with id {0} is deleted'.format(id))
+    else:
+        click.echo('The book with id {0} does not exist'.format(id))
 
 @cli.command()
 @click.argument('id', required=True)
@@ -55,8 +57,11 @@ def delete_book(config, id):
 @config
 def edit_book(config, id, title, author, isbn, page_num):
     book = Book(title=title, author=author, isbn=isbn, page_num=page_num)
-    config.client.edit_book(id, book)
-    click.echo('Updated the book with id {0} to {1}'.format(book.id, str(book)))
+    success = config.client.edit_book(id, book)
+    if success:
+        click.echo('Updated the book with id {0} to {1}'.format(book.id, str(book)))
+    else:
+        click.echo('The book with id {0} does not exist'.format(id))
 
 @cli.command()
 @click.option('--title', '-b', default=None, help='The title of the book')
@@ -110,8 +115,11 @@ def sort_by_page_num(config):
 @config
 def add_borrower(config, username, name, phone):
     borrower = Borrower(username=username, name=name, phone=phone)
-    config.client.add_borrower(borrower)
-    click.echo('The borrower created: {0}'.format(borrower))
+    success = config.client.add_borrower(borrower)
+    if success:
+        click.echo('The borrower created: {0}'.format(borrower))
+    else:
+        click.echo('The borrower with username={0} already exists'.format(username))
 
 @cli.command()
 @click.argument('username', required=True)
@@ -124,8 +132,11 @@ def get_borrower(config, username):
 @click.argument('username', required=True)
 @config
 def delete_borrower(config, username):
-    config.client.delete_borrower(username)
-    click.echo('The borrower with username={0} is deleted'.format(username))
+    success = config.client.delete_borrower(username)
+    if success:
+        click.echo('The borrower with username={0} is deleted'.format(username))
+    else:
+        click.echo('The borrower with username={0} does not exist'.format(username))
 
 @cli.command()
 @click.argument('username', required=True)
@@ -134,9 +145,11 @@ def delete_borrower(config, username):
 @config
 def edit_borrower(config, username, name, phone):
     borrower = Borrower(username=username, name=name, phone=phone)
-    config.client.edit_borrower(username, borrower)
-    click.echo('The borrower with username={0} is deleted'.format(username))
-
+    success = config.client.edit_borrower(username, borrower)
+    if success:
+        click.echo('The borrower with username={0} is deleted'.format(username))
+    else:
+        click.echo('The borrower with username={0} does not exist'.format(username))
 
 @cli.command()
 @click.option('--name', '-n', required=True, help='The name of the borrower')
@@ -150,16 +163,22 @@ def search_by_name(config, name):
 @click.argument('id', required=True)
 @config
 def checkout_book(config, username, id):
-    config.client.checkout_book(username, id)
-    click.echo('The borrowers with username={0} checkout out book with id={1}'.format(username, id))
+    success, fail_reason = config.client.checkout_book(username, id)
+    if success:
+        click.echo('The borrowers with username={0} checkout out book with id={1}'.format(username, id))
+    else:
+        click.echo('Canont checkout book due to {0}'.format(fail_reason))
 
 @cli.command()
 @click.argument('username', required=True)
 @click.argument('id', required=True)
 @config
 def return_book(config, username, id):
-    config.client.return_book(username, id)
-    click.echo('The borrowers with username={0} returned book with id={1}'.format(username, id))
+    success, fail_reason = config.client.return_book(username, id)
+    if success:
+        click.echo('The borrowers with username={0} returned book with id={1}'.format(username, id))
+    else:
+        click.echo('Canont checkout book due to {0}'.format(fail_reason))
 
 @cli.command()
 @click.argument('username', required=True)
@@ -172,5 +191,8 @@ def get_book_checkedoutby(config, username):
 @click.argument('id', required=True)
 @config
 def get_borrower_has(config, id):
-    borrower = config.client.get_borrower_has(id)
-    click.echo('The borrower {0} has checkout book with id={1}'.format(str(borrower), id))
+    borrower, non_reason = config.client.get_borrower_has(id)
+    if borrower:
+        click.echo('The borrower {0} has checkout book with id={1}'.format(str(borrower), id))
+    else:
+        click.echo('The book with id={0} has no owner due to {1}'.format(id, non_reason))
