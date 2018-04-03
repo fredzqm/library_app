@@ -30,6 +30,13 @@ class LibraryTest(object):
         self.assertEqual(book, book_toadd)
         self.assertEqual(broswer, browser_toadd)
 
+    def test_add_multiple_identical_book(self):
+        self.client.add_book(book_toadd)
+        self.client.add_book(book_toadd)
+        self.assertEqual(self.client.get_book('1'), book_toadd)
+        self.assertEqual(self.client.get_book('2'), book_toadd)
+        self.assertEqual(self.client.get_book('3'), book_toadd)
+
     def test_non_int_page_num(self):
         self.assertRaises(Exception, lambda: Borrower(page_num='one'))
 
@@ -45,6 +52,15 @@ class LibraryTest(object):
 
     def test_edit_book(self):
         self.client.edit_book(1, Book(title='new book title'))
+
+        book_toadd_edited = copy(book_toadd)
+        book_toadd_edited.title = 'new book title'
+        self.assertEqual(self.client.get_book('1'), book_toadd_edited)
+
+    def test_edit_and_delete_book(self):
+        self.client.add_book(book_toadd)
+        self.client.edit_book('1', Book(title='new book title'))
+        self.client.delete_book('2')
 
         book_toadd_edited = copy(book_toadd)
         book_toadd_edited.title = 'new book title'
@@ -209,5 +225,5 @@ class LibraryTest(object):
     def test_return_book_not_checkedout(self):
         self.assertTupleEqual(self.client.return_book('zhangq2', '1'), (False, 'book_not_checkedout'))
 
-    def test_get_borrower_has(self):
+    def test_get_borrower_has_book_not_exist000(self):
         self.assertTupleEqual(self.client.get_borrower_has('non_exist_book'), (None, 'book_not_exist'))
