@@ -1,9 +1,9 @@
 from .model import Book, Borrower
 from copy import copy
 
-book_toadd = Book(title='book title', author='Sriram', isbn='1', page_num=200, quantity=3)
-book_toadd2 = Book(title='book small', author='Chandan', isbn='2', page_num=300)
-book_toadd3 = Book(title='book small', author='Chandan', isbn='3', page_num=300)
+book_toadd = Book(title='book small', author='Sriram', isbn='1', page_num=200, quantity=3)
+book_toadd2 = Book(title='book medium', author='Chandan', isbn='2', page_num=300, quantity=1)
+book_toadd3 = Book(title='book big', author='Chandan', isbn='3', page_num=300, quantity=1)
 browser_toadd1 = Borrower(username='zhangq1', name='Fred', phone='111')
 browser_toadd2 = Borrower(username='zhangq2', name='Fred', phone='112')
 browser_toadd3 = Borrower(username='zhangq3', name='Daniel', phone='113')
@@ -18,6 +18,7 @@ class LibraryTest(object):
 	   2. create the self.client
 	   3. final call super(LibraryTest, self).setUp() to pupulate db with initial data
 	'''
+
     def setUp(self):
         if self.setUpClient:
             self.setUpClient()
@@ -39,9 +40,9 @@ class LibraryTest(object):
     def test_create_book_invalid_page_num(self):
         self.assertRaises(Exception, lambda: Book(page_num='one'))
 
-    def test_create_book_int_str_page_num(self):
-        Book(page_num='1')
-        Book(page_num='10')
+    def test_create_book(self):
+        Book(page_num='1', quantity=2)
+        Book(page_num=10, quantity='3')
 
     def test_delete_book(self):
         self.assertTrue(self.client.delete_book('1'))
@@ -49,12 +50,23 @@ class LibraryTest(object):
         self.assertEqual(self.client.get_book('1'), None)
 
     def test_delete_book_not_exist(self):
-        self.assertFalse(self.client.delete_book('10'))
+        self.assertTupleEqual(self.client.delete_book('10'), (False, 'book_not_exist'))
 
         self.assertEqual(self.client.get_book('10'), None)
 
+    def test_delete_book_borrowed(self):
+        self.client.checkout_book('zhangq1', '1')
+        self.assertTupleEqual(self.client.delete_book('1'), (False, 'book_borrowed'))
+
+    def test_delete_book_returned(self):
+        self.client.checkout_book('zhangq1', '1')
+        self.client.return_book('zhangq1', '1')
+
+        self.assertTrue(self.client.delete_book('1'))
+        self.assertEqual(self.client.get_book('1'), None)
+
     def test_edit_book(self):
-        self.client.edit_book('1', Book(title='new book title'))
+        self.assertTrue(self.client.edit_book('1', Book(title='new book title')))
 
         book_toadd_edited = copy(book_toadd)
         book_toadd_edited.title = 'new book title'
@@ -62,7 +74,7 @@ class LibraryTest(object):
 
     def test_edit_and_delete_book(self):
         self.client.add_book(book_toadd)
-        self.client.edit_book('1', Book(title='new book title'))
+        self.assertTrue(self.client.edit_book('1', Book(title='new book title')))
         self.client.delete_book('2')
 
         book_toadd_edited = copy(book_toadd)
@@ -70,16 +82,41 @@ class LibraryTest(object):
         self.assertEqual(self.client.get_book('1'), book_toadd_edited)
 
     def test_edit_book_not_exist(self):
-        self.assertFalse(self.client.edit_book('10', Book()))
+        self.assertTupleEqual(self.client.edit_book('10', Book()), (False, 'book_not_exist'))
 
-    def test_search_byTitle(self):
+    def test_edit_book_quantity_up(self):
+        self.client.checkout_book('zhangq2', '1')
+        self.assertTrue(self.client.edit_book('1', Book(quantity=10)))
+
+        book_toadd_edited = copy(book_toadd)
+        book_toadd_edited.quantity = 10
+        self.assertEqual(self.client.get_book('1'), book_toadd_edited)
+
+    def test_edit_book_quantity_down(self):
+        self.client.add_borrower(browser_toadd2)
+        self.client.checkout_book('zhangq2', '1')
+        self.client.checkout_book('zhangq3', '1')
+        self.assertTrue(self.client.edit_book('1', Book(quantity=2)))
+
+        book_toadd_edited = copy(book_toadd)
+        book_toadd_edited.quantity = 2
+        self.assertEqual(self.client.get_book('1'), book_toadd_edited)
+
+    def test_edit_book_quantity_down_insufficient(self):
+        self.client.add_borrower(browser_toadd2)
+        self.client.checkout_book('zhangq1', '1')
+        self.client.checkout_book('zhangq2', '1')
+
+        self.assertTupleEqual(self.client.edit_book('1', Book(quantity=1)), (False, 'book_borrowed'))
+
+    def test_search_by_title(self):
         books = self.client.search_by_title(book_toadd.title)
 
         self.assertListEqual(books, [book_toadd])
 
     def test_search_by_title_after_edit(self):
         self.client.add_book(book_toadd2)
-        self.client.edit_book('2', Book(title=book_toadd.title))
+        self.assertTrue(self.client.edit_book('2', Book(title=book_toadd.title)))
         books = self.client.search_by_title(book_toadd.title)
 
         edited_book_toadd_2 = copy(book_toadd2)
@@ -170,7 +207,7 @@ class LibraryTest(object):
     def test_checkout_book(self):
         self.client.checkout_book('zhangq1', '1')
         broswers = self.client.get_book_borrowers('1')
-        self.assertEqual(broswers, [browser_toadd1])
+        self.assertListEqual(broswers, [browser_toadd1])
 
         books_checkedout = self.client.get_borrowed_books('zhangq1')
 

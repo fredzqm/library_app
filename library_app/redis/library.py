@@ -191,7 +191,9 @@ class RedisLibrary:
             raise Exception('isbn needs to be str')
         proxy = BookProxy(isbn)
         if not proxy.exists():
-            return False
+            return False, 'book_not_exist'
+        if proxy.get_borrower_num() > 0:
+            return False, 'book_borrowed'
         proxy.delete()
         return True
 
@@ -202,7 +204,9 @@ class RedisLibrary:
     def edit_book(self, isbn, book):
         proxy = BookProxy(isbn)
         if not proxy.exists():
-            return False
+            return False, 'book_not_exist'
+        if book.quantity != None and book.quantity < proxy.get_borrower_num():
+            return False, 'book_borrowed'
         proxy.edit(book)
         return True
 

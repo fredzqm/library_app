@@ -1,7 +1,9 @@
 class Book:
-    def __init__(self, title=None, author=None, isbn=None, page_num=None, quantity=1):
+    def __init__(self, title=None, author=None, isbn=None, page_num=None, quantity=None):
         if page_num != None and type(page_num) != int:
             page_num = int(page_num)
+        if quantity != None and type(quantity) != int:
+            quantity = int(quantity)
         self.title = title
         self.author = author
         self.isbn = isbn
