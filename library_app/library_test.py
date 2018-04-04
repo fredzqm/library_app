@@ -1,10 +1,13 @@
 from .model import Book, Borrower
 from copy import copy
 
-book_toadd = Book(title='book title', author='Sriram', isbn='10000', page_num=200)
-book_toadd2 = Book(title='book small', author='Chandan', isbn='20000', page_num=300)
-browser_toadd = Borrower(username='zhangq2', name='Fred', phone='111')
-browser_toadd2 = Borrower(username='zhangq3', name='Fred', phone='112')
+book_toadd = Book(title='book title', author='Sriram', isbn='1', page_num=200, quantity=3)
+book_toadd2 = Book(title='book small', author='Chandan', isbn='2', page_num=300)
+book_toadd3 = Book(title='book small', author='Chandan', isbn='3', page_num=300)
+browser_toadd1 = Borrower(username='zhangq1', name='Fred', phone='111')
+browser_toadd2 = Borrower(username='zhangq2', name='Fred', phone='112')
+browser_toadd3 = Borrower(username='zhangq3', name='Daniel', phone='113')
+browser_toadd4 = Borrower(username='zhangq4', name='David', phone='114')
 
 
 class LibraryTest(object):
@@ -15,43 +18,43 @@ class LibraryTest(object):
 	   2. create the self.client
 	   3. final call super(LibraryTest, self).setUp() to pupulate db with initial data
 	'''
-
     def setUp(self):
         if self.setUpClient:
             self.setUpClient()
         self.client.drop_db()
         self.client.add_book(book_toadd)
-        self.client.add_borrower(browser_toadd)
+        self.client.add_borrower(browser_toadd1)
 
     def test_init_data(self):
         book = self.client.get_book('1')
-        broswer = self.client.get_borrower('zhangq2')
+        broswer = self.client.get_borrower('zhangq1')
 
         self.assertEqual(book, book_toadd)
-        self.assertEqual(broswer, browser_toadd)
+        self.assertEqual(broswer, browser_toadd1)
 
     def test_add_multiple_identical_book(self):
         self.client.add_book(book_toadd)
-        self.client.add_book(book_toadd)
-        self.assertEqual(self.client.get_book('1'), book_toadd)
-        self.assertEqual(self.client.get_book('2'), book_toadd)
-        self.assertEqual(self.client.get_book('3'), book_toadd)
+        self.assertTupleEqual(self.client.add_book(book_toadd), (False, 'book_exist_already'))
 
-    def test_non_int_page_num(self):
-        self.assertRaises(Exception, lambda: Borrower(page_num='one'))
+    def test_create_book_invalid_page_num(self):
+        self.assertRaises(Exception, lambda: Book(page_num='one'))
+
+    def test_create_book_int_str_page_num(self):
+        Book(page_num='1')
+        Book(page_num='10')
 
     def test_delete_book(self):
-        self.assertTrue(self.client.delete_book(1))
+        self.assertTrue(self.client.delete_book('1'))
 
         self.assertEqual(self.client.get_book('1'), None)
 
     def test_delete_book_not_exist(self):
-        self.assertFalse(self.client.delete_book(10))
+        self.assertFalse(self.client.delete_book('10'))
 
         self.assertEqual(self.client.get_book('10'), None)
 
     def test_edit_book(self):
-        self.client.edit_book(1, Book(title='new book title'))
+        self.client.edit_book('1', Book(title='new book title'))
 
         book_toadd_edited = copy(book_toadd)
         book_toadd_edited.title = 'new book title'
@@ -130,8 +133,8 @@ class LibraryTest(object):
         self.assertListEqual(books, [book_toadd, book_toadd2])
 
     def test_delete_borrower(self):
-        self.assertTrue(self.client.delete_borrower('zhangq2'))
-        broswer = self.client.get_borrower('zhangq2')
+        self.assertTrue(self.client.delete_borrower('zhangq1'))
+        broswer = self.client.get_borrower('zhangq1')
 
         self.assertEqual(broswer, None)
 
@@ -139,9 +142,9 @@ class LibraryTest(object):
         self.assertFalse(self.client.delete_borrower('no_one'))
 
     def test_edit_browser(self):
-        self.assertTrue(self.client.edit_borrower('zhangq2', Borrower(phone='300')))
-        broswer = self.client.get_borrower('zhangq2')
-        browser_edited = copy(browser_toadd)
+        self.assertTrue(self.client.edit_borrower('zhangq1', Borrower(phone='300')))
+        broswer = self.client.get_borrower('zhangq1')
+        browser_edited = copy(browser_toadd1)
         browser_edited.phone = '300'
         self.assertEqual(broswer, browser_edited)
 
@@ -151,79 +154,83 @@ class LibraryTest(object):
     def test_search_by_name(self):
         broswers = self.client.search_by_name('Fred')
 
-        self.assertListEqual(broswers, [browser_toadd])
+        self.assertListEqual(broswers, [browser_toadd1])
 
     def test_search_byName(self):
         broswers = self.client.search_by_name('Fred')
 
-        self.assertListEqual(broswers, [browser_toadd])
+        self.assertListEqual(broswers, [browser_toadd1])
 
-    def test_search_byNameAfterAdd(self):
+    def test_search_by_name_after_add(self):
         self.client.add_borrower(browser_toadd2)
         broswers = self.client.search_by_name('Fred')
 
-        self.assertCountEqual(broswers, [browser_toadd, browser_toadd2])
+        self.assertCountEqual(broswers, [browser_toadd1, browser_toadd2])
 
     def test_checkout_book(self):
-        self.client.checkout_book('zhangq2', '1')
-        broswer = self.client.get_borrower_has('1')
-        self.assertEqual(broswer, browser_toadd)
+        self.client.checkout_book('zhangq1', '1')
+        broswers = self.client.get_book_borrowers('1')
+        self.assertEqual(broswers, [browser_toadd1])
 
-        books_checkedout = self.client.get_book_checkedoutby('zhangq2')
+        books_checkedout = self.client.get_borrowed_books('zhangq1')
 
-        book_toadd_checkout = copy(book_toadd)
-        book_toadd_checkout.checkoutby = 'zhangq2'
-        self.assertListEqual(books_checkedout, [book_toadd_checkout])
+        self.assertListEqual(books_checkedout, [book_toadd])
 
-    def test_checkout_book_username_invalid(self):
-        self.assertTupleEqual(self.client.checkout_book('xxx', '1'), (False, 'username_invalid'))
+    def test_checkout_book_browser_not_exist(self):
+        self.assertTupleEqual(self.client.checkout_book('xxx', '1'), (False, 'browser_not_exist'))
 
     def test_checkout_book_not_exist(self):
-        self.assertTupleEqual(self.client.checkout_book('zhangq2', '4'), (False, 'book_not_exist'))
+        self.assertTupleEqual(self.client.checkout_book('zhangq1', '4'), (False, 'book_not_exist'))
 
     def test_checkout_book_same_book(self):
         self.client.add_borrower(browser_toadd2)
+        self.client.add_borrower(browser_toadd3)
+        self.client.add_borrower(browser_toadd4)
 
+        self.assertTrue(self.client.checkout_book('zhangq1', '1'))
         self.assertTrue(self.client.checkout_book('zhangq2', '1'))
-        self.assertTupleEqual(self.client.checkout_book('zhangq3', '1'), (False, 'book_already_borrowed'))
+        self.assertTrue(self.client.checkout_book('zhangq3', '1'))
+        self.assertTupleEqual(self.client.checkout_book('zhangq4', '1'), (False, 'book_not_available'))
+
+    def test_checkout_book_same_book_twice(self):
+        self.client.add_borrower(browser_toadd3)
+
+        self.assertTrue(self.client.checkout_book('zhangq1', '1'))
+        self.assertTupleEqual(self.client.checkout_book('zhangq1', '1'), (False, 'book_already_borrowed'))
 
     def test_checkout_book_multiple(self):
         self.client.add_book(book_toadd2)
-        self.assertTrue(self.client.checkout_book('zhangq2', '1'))
-        self.assertTrue(self.client.checkout_book('zhangq2', '2'))
+        self.assertTrue(self.client.checkout_book('zhangq1', '1'))
+        self.assertTrue(self.client.checkout_book('zhangq1', '2'))
 
-        broswer = self.client.get_borrower_has('1')
-        self.assertEqual(broswer, browser_toadd)
-        broswer = self.client.get_borrower_has('2')
-        self.assertEqual(broswer, browser_toadd)
+        broswer = self.client.get_book_borrowers('1')
+        self.assertEqual(broswer, [browser_toadd1])
+        broswer = self.client.get_book_borrowers('2')
+        self.assertEqual(broswer, [browser_toadd1])
 
-        books_checkedout = self.client.get_book_checkedoutby('zhangq2')
-        book_toadd_checkout = copy(book_toadd)
-        book_toadd_checkout.checkoutby = 'zhangq2'
-        book_toadd_checkout2 = copy(book_toadd2)
-        book_toadd_checkout2.checkoutby = 'zhangq2'
-        self.assertCountEqual(books_checkedout, [book_toadd_checkout, book_toadd_checkout2])
+        books_checkedout = self.client.get_borrowed_books('zhangq1')
+        self.assertCountEqual(books_checkedout, [book_toadd, book_toadd2])
 
     def test_return_book(self):
-        self.assertTrue(self.client.checkout_book('zhangq2', '1'))
-        self.assertTrue(self.client.return_book('zhangq2', '1'))
+        self.assertTrue(self.client.checkout_book('zhangq1', '1'))
+        self.assertTrue(self.client.return_book('zhangq1', '1'))
 
-        self.assertTupleEqual(self.client.get_borrower_has('1'), (None, 'book_not_checkedout'))
+        self.assertListEqual(self.client.get_book_borrowers('1'), [])
 
-        books_checkedout = self.client.get_book_checkedoutby('zhangq2')
+        books_checkedout = self.client.get_borrowed_books('zhangq1')
         self.assertListEqual(books_checkedout, [])
 
     def test_return_book_not_checkedout(self):
-        self.assertTupleEqual(self.client.return_book('zhangq2', '1'), (False, 'book_not_checkedout'))
+        self.assertTupleEqual(self.client.return_book('zhangq1', '1'), (False, 'book_not_borrowed'))
 
-    def test_return_book_username_invalid(self):
-        self.assertTupleEqual(self.client.return_book('xxx', '1'), (False, 'username_invalid'))
+    def test_return_book_browser_not_exist(self):
+        self.assertTupleEqual(self.client.return_book('xxx', '1'), (False, 'browser_not_exist'))
 
     def test_return_book_not_exist(self):
-        self.assertTupleEqual(self.client.return_book('zhangq2', '4'), (False, 'book_not_exist'))
+        self.assertTupleEqual(self.client.return_book('zhangq1', '4'), (False, 'book_not_exist'))
 
     def test_return_book_not_checkedout(self):
-        self.assertTupleEqual(self.client.return_book('zhangq2', '1'), (False, 'book_not_checkedout'))
+        self.assertTupleEqual(self.client.return_book('zhangq1', '1'), (False, 'book_not_borrowed'))
 
-    def test_get_borrower_has_book_not_exist000(self):
-        self.assertTupleEqual(self.client.get_borrower_has('non_exist_book'), (None, 'book_not_exist'))
+    def test_get_book_borrowers_book_not_exist000(self):
+        self.assertTupleEqual(self.client.get_book_borrowers('non_exist_book'), (None, 'book_not_exist'))

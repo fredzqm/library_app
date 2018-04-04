@@ -21,10 +21,10 @@ def drop_db(config):
     click.echo('The database {0} is dropped', type(config.client))
 
 @cli.command()
-@click.option('--title', '-b', default=None, help='The title of the book')
-@click.option('--author', '-a', default=None, help='The author of the book')
-@click.option('--isbn', '-i', default=None, help='The isbn of the book')
-@click.option('--page-num', '-p', default=None, type=click.INT, help='The page number of the book')
+@click.option('--title', '-t', required=True, help='The title of the book')
+@click.option('--author', '-a', required=True, help='The author of the book')
+@click.option('--isbn', '-i', required=True, help='The isbn of the book')
+@click.option('--page-num', '-p', required=True, type=click.INT, help='The page number of the book')
 @config
 def add_book(config, title, author, isbn, page_num):
     book = Book(title=title, author=author, isbn=isbn, page_num=page_num)
