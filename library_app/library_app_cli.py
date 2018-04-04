@@ -4,109 +4,168 @@ from .config import Config
 from .redis.library import RedisLibrary
 from .model import Book, Borrower
 
-
 config = click.make_pass_decorator(Config, ensure=True)
 
+
+def _list_str(books):
+    return '\n\t' + '\n\t'.join(map(lambda b: str(b), books))
+
+
 @click.group()
-@click.option('--backend', '-b', is_flag=True, required=True, help='Specify the backend of this library')
+@click.option('--backend', '-b', default='redis', help='Specify the backend of this library')
 @click.pass_context
 @config
 def cli(config, backend):
-    config.client = RedisLibrary()
+    if backend == 'redis':
+        config.client = RedisLibrary()
+
 
 @cli.command()
 @config
 def drop_db(config):
+    '''
+        Clean the database to start test from fresh
+
+    '''
     config.client.drop_db()
-    click.echo('The database {0} is dropped', type(config.client))
+    click.echo('The database {} is dropped'.format(str(type(config.client))))
+
 
 @cli.command()
+@click.argument('isbn', required=True)
 @click.option('--title', '-t', required=True, help='The title of the book')
 @click.option('--author', '-a', required=True, help='The author of the book')
-@click.option('--isbn', '-i', required=True, help='The isbn of the book')
 @click.option('--page-num', '-p', required=True, type=click.INT, help='The page number of the book')
+@click.option('--quantity', '-q', default=1, type=click.INT, help='The quantity of the book')
 @config
-def add_book(config, title, author, isbn, page_num):
-    book = Book(title=title, author=author, isbn=isbn, page_num=page_num)
+def add_book(config, isbn, title, author, page_num, quantity=1):
+    '''
+        Add a book new book
+
+    '''
+    book = Book(isbn=isbn, title=title, author=author, page_num=page_num, quantity=quantity)
     config.client.add_book(book)
-    click.echo('Created a book with id {0} : {1}'.format(book.id, str(book)))
+    click.echo('Created {} book with isbn={}: {}'.format(book.quantity, book.isbn, _list_str([book])))
+
 
 @cli.command()
-@click.argument('id', required=True)
+@click.argument('isbn', required=True)
 @config
-def get_book(config, id):
-    book = config.client.get_book(id)
-    click.echo('The book with id {0} : {1}'.format(id, str(book)))
+def get_book(config, isbn):
+    '''
+        Get a book by isbn id
 
-@cli.command()
-@click.argument('id', required=True)
-@config
-def delete_book(config, id):
-    success = config.client.delete_book(id)
-    if success:
-        click.echo('The book with id {0} is deleted'.format(id))
+    '''
+    book = config.client.get_book(isbn)
+    if book:
+        click.echo('There are {} books with isbn={}: {}'.format(book.quantity, isbn, _list_str([book])))
     else:
-        click.echo('The book with id {0} does not exist'.format(id))
+        click.echo('There is no book with isbn={}'.format(book.quantity, isbn))
+
 
 @cli.command()
-@click.argument('id', required=True)
+@click.argument('isbn', required=True)
+@config
+def delete_book(config, isbn):
+    '''
+        Delete a book with isbn id
+
+    '''
+    try:
+        config.client.delete_book(isbn)
+        click.echo('The book with isbn={} is deleted'.format(isbn))
+    except Exception as e:
+        click.echo('The book with isbn={} cannot be deleted due to {}'.format(isbn, e))
+
+
+@cli.command()
+@click.argument('isbn', required=True)
 @click.option('--title', '-b', default=None, help='The title of the book')
 @click.option('--author', '-a', default=None, help='The author of the book')
 @click.option('--isbn', '-i', default=None, help='The isbn of the book')
 @click.option('--page-num', '-p', default=None, type=click.INT, help='The page number of the book')
+@click.option('--quantity', '-q', default=1, type=click.INT, help='The quantity of the book')
 @config
-def edit_book(config, id, title, author, isbn, page_num):
-    book = Book(title=title, author=author, isbn=isbn, page_num=page_num)
-    success = config.client.edit_book(id, book)
-    if success:
-        click.echo('Updated the book with id {0} to {1}'.format(book.id, str(book)))
-    else:
-        click.echo('The book with id {0} does not exist'.format(id))
+def edit_book(config, isbn, title, author, page_num, quantity):
+    '''
+        Edit a book with isbn id
+
+    '''
+    book = Book(title=title, author=author, isbn=isbn, page_num=page_num, quantity=quantity)
+    try:
+        config.client.edit_book(isbn, book)
+        click.echo('Updated the book with isbn={} to {}'.format(book.isbn, str(book)))
+    except Exception as e:
+        click.echo('Cannot edit book with isbn={} due to {}'.format(isbn, e))
+
 
 @cli.command()
-@click.option('--title', '-b', default=None, help='The title of the book')
+@click.argument('title')
 @config
 def search_by_title(config, title):
+    '''
+        Find a book by title
+
+    '''
     books = config.client.search_by_title(title)
-    click.echo('found books with title {0} : {1}'.format(title, str(books)))
+    click.echo('Found books with title={} : {}'.format(title, _list_str(books)))
+
 
 @cli.command()
-@click.option('--author', '-a', default=None, help='The author of the book')
+@click.argument('author')
 @config
 def search_by_author(config, author):
-    books = config.client.search_by_author(author)
-    click.echo('found books with author {0} : {1}'.format(author, str(books)))
+    '''
+        Find a book by Author
 
-@cli.command()
-@click.option('--isbn', '-i', default=None, help='The isbn of the book')
-@config
-def search_by_isbn(config, isbn):
-    books = config.client.search_by_isbn(isbn)
-    click.echo('found books with isbn {0} : {1}'.format(isbn, str(books)))
+    '''
+    books = config.client.search_by_author(author)
+    click.echo('Found books with author={} : {}'.format(author, _list_str(books)))
+
 
 @cli.command()
 @config
 def sort_by_title(config):
+    '''
+        Sort all books by title
+
+    '''
     books = config.client.sort_by_title()
-    click.echo('Books sorted by title: {0}'.format(str(books)))
+    click.echo('Books sorted by title: {} : {}'.format(str(books), _list_str(books)))
+
 
 @cli.command()
 @config
 def sort_by_author(config):
+    '''
+        Sort all books by author
+
+    '''
     books = config.client.sort_by_author()
-    click.echo('Books sorted by author: {0}'.format(str(books)))
+    click.echo('Books sorted by author: {}'.format(_list_str(books)))
+
 
 @cli.command()
 @config
 def sort_by_isbn(config):
+    '''
+        Sort all books by isbn
+
+    '''
     books = config.client.sort_by_isbn()
-    click.echo('Books sorted by isbn: {0}'.format(str(books)))
+    click.echo('Books sorted by isbn: {}'.format(_list_str(books)))
+
 
 @cli.command()
 @config
 def sort_by_page_num(config):
+    '''
+        Sort all books by page number
+
+    '''
     books = config.client.sort_by_page_num()
-    click.echo('Books sorted by page_num: {0}'.format(str(books)))
+    click.echo('Books sorted by page_num: {}'.format(_list_str(books)))
+
 
 @cli.command()
 @click.argument('username', required=True)
@@ -114,29 +173,44 @@ def sort_by_page_num(config):
 @click.option('--phone', '-p', help='The phone number of the borrower')
 @config
 def add_borrower(config, username, name, phone):
+    '''
+        Add a borrower
+
+    '''
     borrower = Borrower(username=username, name=name, phone=phone)
-    success = config.client.add_borrower(borrower)
-    if success:
-        click.echo('The borrower created: {0}'.format(borrower))
-    else:
-        click.echo('The borrower with username={0} already exists'.format(username))
+    try:
+        config.client.add_borrower(borrower)
+        click.echo('The borrower created: {}'.format(borrower))
+    except Exception as e:
+        click.echo('Cannot create borrower {} due to {}'.format(str(borrower), e))
+
 
 @cli.command()
 @click.argument('username', required=True)
 @config
 def get_borrower(config, username):
+    '''
+        Get a borrower by username
+
+    '''
     borrower = config.client.get_borrower(username)
-    click.echo('The borrower found: {0}'.format(borrower))
+    click.echo('The borrower found: {}'.format(borrower))
+
 
 @cli.command()
 @click.argument('username', required=True)
 @config
 def delete_borrower(config, username):
-    success = config.client.delete_borrower(username)
-    if success:
-        click.echo('The borrower with username={0} is deleted'.format(username))
-    else:
-        click.echo('The borrower with username={0} does not exist'.format(username))
+    '''
+        Delete a borrower
+
+    '''
+    config.client.delete_borrower(username)
+    try:
+        click.echo('The borrower with username={} is deleted'.format(username))
+    except Exception as e:
+        click.echo('Cannot delete the borrower with username={} due to '.format(username, e))
+
 
 @cli.command()
 @click.argument('username', required=True)
@@ -144,55 +218,96 @@ def delete_borrower(config, username):
 @click.option('--phone', '-p', help='The phone number of the borrower')
 @config
 def edit_borrower(config, username, name, phone):
+    '''
+        Edit a borrower
+
+    '''
     borrower = Borrower(username=username, name=name, phone=phone)
-    success = config.client.edit_borrower(username, borrower)
-    if success:
-        click.echo('The borrower with username={0} is deleted'.format(username))
-    else:
-        click.echo('The borrower with username={0} does not exist'.format(username))
+    try:
+        config.client.edit_borrower(username, borrower)
+        click.echo('The borrower with username={} is deleted'.format(username))
+    except Exception as e:
+        click.echo('Cannot edit borrower due to {}'.format(username, e))
+
 
 @cli.command()
-@click.option('--name', '-n', required=True, help='The name of the borrower')
+@click.argument('name', required=True)
 @config
 def search_by_name(config, name):
+    '''
+        Search for borrowers by name
+
+    '''
     borrowers = config.client.search_by_name(name)
-    click.echo('The borrowers with name {0} found : {1}'.format(name, str(borrowers)))
+    click.echo('The borrowers with name={} found : {}'.format(name, _list_str(borrowers)))
+
 
 @cli.command()
 @click.argument('username', required=True)
-@click.argument('id', required=True)
+@click.argument('isbn', required=True)
 @config
-def checkout_book(config, username, id):
-    success, fail_reason = config.client.checkout_book(username, id)
-    if success:
-        click.echo('The borrowers with username={0} checkout out book with id={1}'.format(username, id))
-    else:
-        click.echo('Canont checkout book due to {0}'.format(fail_reason))
+def checkout_book(config, username, isbn):
+    '''
+        A borrower check out a book
+
+    '''
+    try:
+        config.client.checkout_book(username, isbn)
+        click.echo('The borrower with username={} check outed out book with isbn={}'.format(username, isbn))
+    except Exception as e:
+        click.echo('Canont check out book due to {}'.format(e))
+
 
 @cli.command()
 @click.argument('username', required=True)
-@click.argument('id', required=True)
+@click.argument('isbn', required=True)
 @config
-def return_book(config, username, id):
-    success, fail_reason = config.client.return_book(username, id)
-    if success:
-        click.echo('The borrowers with username={0} returned book with id={1}'.format(username, id))
+def return_book(config, username, isbn):
+    '''
+        A borrower return a book
+
+    :param config:
+    :param username:
+    :param isbn:
+    :return:
+    '''
+    try:
+        config.client.return_book(username, isbn)
+        click.echo('The borrowers with username={} returned book with isbn={}'.format(username, isbn))
+    except Exception as e:
+        click.echo('Canont return book due to {}'.format(e))
+
+
+@cli.command()
+@click.argument('isbn', required=True)
+@config
+def get_book_borrowers(config, isbn):
+    '''
+        Get the borrowers that have borrowed this book
+
+    :param config:
+    :param isbn:
+    :return:
+    '''
+
+    borrowers = config.client.get_book_borrowers(isbn)
+    if len(borrowers) == 0:
+        click.echo('The book with isbn={} has not been checked out'.format(isbn))
     else:
-        click.echo('Canont checkout book due to {0}'.format(fail_reason))
+        click.echo('The borrowers who has checked out book with isbn={}: {}'.format(isbn, _list_str(borrowers)))
+
 
 @cli.command()
 @click.argument('username', required=True)
 @config
-def get_book_checkedoutby(config, username):
-    books = config.client.get_book_checkedoutby(username)
-    click.echo('The borrowers with username={0} has checkout {1}'.format(username, str(books)))
+def get_borrowed_books(config, username):
+    '''
+        Get the books a borrower has borrowed
 
-@cli.command()
-@click.argument('id', required=True)
-@config
-def get_borrower_has(config, id):
-    borrower, non_reason = config.client.get_borrower_has(id)
-    if borrower:
-        click.echo('The borrower {0} has checkout book with id={1}'.format(str(borrower), id))
+    '''
+
+    books = config.client.get_borrowed_books(username)
+    if len(books) == 0:
+        click.echo('The user with username={} has not checked out any book'.format(username))
     else:
-        click.echo('The book with id={0} has no owner due to {1}'.format(id, non_reason))
+        click.echo('The user with username={} has checked out {}'.format(username, _list_str(books)))
