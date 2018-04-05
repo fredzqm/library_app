@@ -348,9 +348,9 @@ class LibraryTest(object):
         self.client.checkout_book('zhangq2', '2')
 
         broswer = self.client.get_book_borrowers('1')
-        self.assertEqual(broswer, [browser_toadd1, browser_toadd2])
+        self.assertCountEqual(broswer, [browser_toadd1, browser_toadd2])
         broswer = self.client.get_book_borrowers('2')
-        self.assertEqual(broswer, [browser_toadd1, browser_toadd2])
+        self.assertCountEqual(broswer, [browser_toadd1, browser_toadd2])
 
         books_checkedout = self.client.get_borrowed_books('zhangq1')
         self.assertCountEqual(books_checkedout, [book_toadd, book_toadd2])

@@ -1,7 +1,7 @@
 import click
 
 from .config import Config
-from .redis.library import RedisLibrary
+from .redis.redis_library import RedisLibrary
 from .model import Book, Borrower
 
 config = click.make_pass_decorator(Config, ensure=True)
