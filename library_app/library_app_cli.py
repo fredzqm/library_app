@@ -34,7 +34,7 @@ def drop_db(config):
 @cli.command()
 @click.argument('isbn', required=True)
 @click.option('--title', '-t', required=True, help='The title of the book')
-@click.option('--author', '-a', required=True, nargs=-1, help='The author of the book')
+@click.option('--author', '-a', required=True, multiple=True, help='The author of the book')
 @click.option('--page-num', '-p', required=True, type=click.INT, help='The page number of the book')
 @click.option('--quantity', '-q', default=1, type=click.INT, help='The quantity of the book')
 @config
@@ -81,7 +81,7 @@ def delete_book(config, isbn):
 @cli.command()
 @click.argument('isbn', required=True)
 @click.option('--title', '-b', default=None, help='The title of the book')
-@click.option('--author', '-a', nargs=-1, help='The author of the book')
+@click.option('--author', '-a', multiple=True, help='The author of the book')
 @click.option('--isbn', '-i', default=None, help='The isbn of the book')
 @click.option('--page-num', '-p', default=None, type=click.INT, help='The page number of the book')
 @click.option('--quantity', '-q', default=1, type=click.INT, help='The quantity of the book')
@@ -91,10 +91,12 @@ def edit_book(config, isbn, title, author, page_num, quantity):
         Edit a book with isbn id
 
     '''
+    if len(author) == 0:
+        author = None
     book = Book(title=title, author=author, isbn=isbn, page_num=page_num, quantity=quantity)
     try:
         config.client.edit_book(isbn, book)
-        click.echo('Updated the book with isbn={} to {}'.format(book.isbn, str(book)))
+        click.echo('Updated the book with isbn={} to {}'.format(book.isbn, _list_str([config.client.get_book(isbn)])))
     except Exception as e:
         click.echo('Cannot edit book with isbn={} due to {}'.format(isbn, e))
 
@@ -131,7 +133,7 @@ def sort_by_title(config):
 
     '''
     books = config.client.sort_by_title()
-    click.echo('Books sorted by title: {} : {}'.format(str(books), _list_str(books)))
+    click.echo('Books sorted by title: {}'.format(_list_str(books)))
 
 
 @cli.command()
@@ -180,9 +182,9 @@ def add_borrower(config, username, name, phone):
     borrower = Borrower(username=username, name=name, phone=phone)
     try:
         config.client.add_borrower(borrower)
-        click.echo('The borrower created: {}'.format(borrower))
+        click.echo('The borrower created: {}'.format(_list_str([borrower])))
     except Exception as e:
-        click.echo('Cannot create borrower {} due to {}'.format(str(borrower), e))
+        click.echo('Cannot create borrower {} due to {}'.format(borrower, e))
 
 
 @cli.command()
@@ -225,7 +227,7 @@ def edit_borrower(config, username, name, phone):
     borrower = Borrower(username=username, name=name, phone=phone)
     try:
         config.client.edit_borrower(username, borrower)
-        click.echo('The borrower with username={} is deleted'.format(username))
+        click.echo('The borrower with username={} is deleted'.format(config.client.get_borrower(username)))
     except Exception as e:
         click.echo('Cannot edit borrower due to {}'.format(username, e))
 
