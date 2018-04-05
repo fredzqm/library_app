@@ -50,7 +50,8 @@ class BookProxy:
         return Book(isbn=key[5:],
                     title=parse_dict(dict, b'title'),
                     author=parse_dict(dict, b'author'),
-                    page_num=parse_dict(dict, b'page_num'))
+                    page_num=int(parse_dict(dict, b'page_num')),
+                    quantity=int(parse_dict(dict, b'quantity')))
 
     @staticmethod
     def get_books(book_keys):
@@ -159,13 +160,22 @@ class BorrowerProxy:
         if phone:
             get_redis().hset(self.borrower_key, 'phone', phone)
 
+    def get_borrowed_book_num(self):
+        return get_redis().scard('borrower:checkoutby-'+self.borrower_key)
 
 class RedisLibrary:
     def drop_db(self):
         get_redis().flushall()
 
     def add_book(self, book):
-        # book:count stored the largets book id that can exist
+        if book is None or not book.isbn:
+            raise Exception('required_field_book.isbn')
+        if book.page_num is None or type(book.page_num) is not int or book.page_num <= 0:
+            raise Exception('required_posivitive_field_book.page_num')
+        if book.quantity is None:
+            book.quantity = 1
+        elif type(book.quantity) is not int or book.quantity <= 0:
+            raise Exception('posivitive_field_book.quantity')
         bookproxy = BookProxy(book.isbn)
         if bookproxy.exists():
             raise Exception('book_exist_already')
@@ -214,6 +224,8 @@ class RedisLibrary:
     '''
 
     def add_borrower(self, borrower):
+        if borrower is None or not borrower.username:
+            raise Exception('required_field_borrower.username')
         proxy = BorrowerProxy(borrower.username)
         if proxy.exists():
             raise Exception('borrower_already_exists')
@@ -226,14 +238,15 @@ class RedisLibrary:
         proxy = BorrowerProxy(username)
         if not proxy.exists():
             raise Exception('borrower_not_exists')
+        if proxy.get_borrowed_book_num() > 0:
+            raise Exception('book_borrowed')
         proxy.delete()
 
     def edit_borrower(self, username, borrower):
         proxy = BorrowerProxy(username)
         if not proxy.exists():
-            return False
+            raise Exception('borrower_not_exists')
         proxy.edit(borrower)
-        return True
 
     def search_by_name(self, name):
         return BorrowerProxy.get_borrowers(get_redis().smembers('borrower:name-' + name))
@@ -254,7 +267,6 @@ class RedisLibrary:
         if proxy.get_borrower_num() >= proxy.get_quantity():
             raise Exception('book_not_available')
         proxy.add_borrower(borrowerProxy)
-        return True
 
     def return_book(self, username, book_id):
         borrowerProxy = BorrowerProxy(username)
@@ -267,7 +279,6 @@ class RedisLibrary:
         if not proxy.is_borrower(borrowerProxy):
             raise Exception('book_not_borrowed')
         proxy.remove_borrower(borrowerProxy)
-        return True
 
     def get_book_borrowers(self, isbn):
         proxy = BookProxy(isbn)

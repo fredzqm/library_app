@@ -255,7 +255,7 @@ def checkout_book(config, username, isbn):
         config.client.checkout_book(username, isbn)
         click.echo('The borrower with username={} check outed out book with isbn={}'.format(username, isbn))
     except Exception as e:
-        click.echo('Canont check out book due to {}'.format(e))
+        click.echo('Cannot check out book due to {}'.format(e))
 
 
 @cli.command()
@@ -266,16 +266,12 @@ def return_book(config, username, isbn):
     '''
         A borrower return a book
 
-    :param config:
-    :param username:
-    :param isbn:
-    :return:
     '''
     try:
         config.client.return_book(username, isbn)
         click.echo('The borrowers with username={} returned book with isbn={}'.format(username, isbn))
     except Exception as e:
-        click.echo('Canont return book due to {}'.format(e))
+        click.echo('Cannot return book due to {}'.format(e))
 
 
 @cli.command()
@@ -285,9 +281,6 @@ def get_book_borrowers(config, isbn):
     '''
         Get the borrowers that have borrowed this book
 
-    :param config:
-    :param isbn:
-    :return:
     '''
 
     borrowers = config.client.get_book_borrowers(isbn)

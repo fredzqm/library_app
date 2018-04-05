@@ -1,8 +1,8 @@
 class Book:
     def __init__(self, title=None, author=None, isbn=None, page_num=None, quantity=None):
-        if page_num != None and type(page_num) != int:
+        if page_num is not None and type(page_num) != int:
             page_num = int(page_num)
-        if quantity != None and type(quantity) != int:
+        if quantity is not None and type(quantity) != int:
             quantity = int(quantity)
         self.title = title
         self.author = author
@@ -11,14 +11,16 @@ class Book:
         self.quantity = quantity
 
     def __repr__(self):
-        return ('title: {0} author: {1} isbn: {2} page_num: {3}'.
-            format(self.title, self.author, self.isbn, self.page_num))
+        return ('isbn: {} title: {} author: {} page_num: {} quantity: {}'.
+            format(self.isbn, self.title, self.author, self.page_num, self.quantity))
 
     def __eq__(self, other):
         return (
             self.isbn == other.isbn and
             self.title == other.title and
-            self.page_num == other.page_num)
+            self.author == other.author and
+            self.page_num == other.page_num and
+            self.quantity == other.quantity)
 
     def __hash__(self):
         return hash(str(self))
@@ -30,7 +32,7 @@ class Borrower:
         self.phone = phone    
 
     def __repr__(self):
-        return 'username: {0} name: {1} phone: {2}'.format(self.username, self.name, self.phone)
+        return 'username: {} name: {} phone: {}'.format(self.username, self.name, self.phone)
 
     def __eq__(self, other):
         return (
