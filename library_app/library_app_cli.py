@@ -19,6 +19,11 @@ def cli(config, backend):
     if backend == 'redis':
         config.client = RedisLibrary()
 
+def safe_cli():
+    try:
+        cli()
+    except Exception as e:
+        click.echo('Invalid operation due to {}'.format(e))
 
 @cli.command()
 @config
@@ -47,7 +52,6 @@ def add_book(config, isbn, title, author, page_num, quantity=1):
     config.client.add_book(book)
     click.echo('Created {} book with isbn={}: {}'.format(book.quantity, book.isbn, _list_str([book])))
 
-
 @cli.command()
 @click.argument('isbn', required=True)
 @config
@@ -71,11 +75,8 @@ def delete_book(config, isbn):
         Delete a book with isbn id
 
     '''
-    try:
-        config.client.delete_book(isbn)
-        click.echo('The book with isbn={} is deleted'.format(isbn))
-    except Exception as e:
-        click.echo('The book with isbn={} cannot be deleted due to {}'.format(isbn, e))
+    config.client.delete_book(isbn)
+    click.echo('The book with isbn={} is deleted'.format(isbn))
 
 
 @cli.command()
@@ -94,11 +95,8 @@ def edit_book(config, isbn, title, author, page_num, quantity):
     if len(author) == 0:
         author = None
     book = Book(title=title, author=author, isbn=isbn, page_num=page_num, quantity=quantity)
-    try:
-        config.client.edit_book(isbn, book)
-        click.echo('Updated the book with isbn={} to {}'.format(book.isbn, _list_str([config.client.get_book(isbn)])))
-    except Exception as e:
-        click.echo('Cannot edit book with isbn={} due to {}'.format(isbn, e))
+    config.client.edit_book(isbn, book)
+    click.echo('Updated the book with isbn={} to {}'.format(book.isbn, _list_str([config.client.get_book(isbn)])))
 
 
 @cli.command()
@@ -180,11 +178,8 @@ def add_borrower(config, username, name, phone):
 
     '''
     borrower = Borrower(username=username, name=name, phone=phone)
-    try:
-        config.client.add_borrower(borrower)
-        click.echo('The borrower created: {}'.format(_list_str([borrower])))
-    except Exception as e:
-        click.echo('Cannot create borrower {} due to {}'.format(borrower, e))
+    config.client.add_borrower(borrower)
+    click.echo('The borrower created: {}'.format(_list_str([borrower])))
 
 
 @cli.command()
@@ -208,10 +203,7 @@ def delete_borrower(config, username):
 
     '''
     config.client.delete_borrower(username)
-    try:
-        click.echo('The borrower with username={} is deleted'.format(username))
-    except Exception as e:
-        click.echo('Cannot delete the borrower with username={} due to '.format(username, e))
+    click.echo('The borrower with username={} is deleted'.format(username))
 
 
 @cli.command()
@@ -225,11 +217,8 @@ def edit_borrower(config, username, name, phone):
 
     '''
     borrower = Borrower(username=username, name=name, phone=phone)
-    try:
-        config.client.edit_borrower(username, borrower)
-        click.echo('The borrower with username={} is deleted'.format(config.client.get_borrower(username)))
-    except Exception as e:
-        click.echo('Cannot edit borrower due to {}'.format(username, e))
+    config.client.edit_borrower(username, borrower)
+    click.echo('The borrower with username={} is edited'.format(config.client.get_borrower(username)))
 
 
 @cli.command()
@@ -253,11 +242,8 @@ def checkout_book(config, username, isbn):
         A borrower check out a book
 
     '''
-    try:
-        config.client.checkout_book(username, isbn)
-        click.echo('The borrower with username={} check outed out book with isbn={}'.format(username, isbn))
-    except Exception as e:
-        click.echo('Cannot check out book due to {}'.format(e))
+    config.client.checkout_book(username, isbn)
+    click.echo('The borrower with username={} check outed out book with isbn={}'.format(username, isbn))
 
 
 @cli.command()
@@ -269,11 +255,8 @@ def return_book(config, username, isbn):
         A borrower return a book
 
     '''
-    try:
-        config.client.return_book(username, isbn)
-        click.echo('The borrowers with username={} returned book with isbn={}'.format(username, isbn))
-    except Exception as e:
-        click.echo('Cannot return book due to {}'.format(e))
+    config.client.return_book(username, isbn)
+    click.echo('The borrowers with username={} returned book with isbn={}'.format(username, isbn))
 
 
 @cli.command()
@@ -284,13 +267,11 @@ def get_book_borrowers(config, isbn):
         Get the borrowers that have borrowed this book
 
     '''
-
     borrowers = config.client.get_book_borrowers(isbn)
     if len(borrowers) == 0:
         click.echo('The book with isbn={} has not been checked out'.format(isbn))
     else:
         click.echo('The borrowers who has checked out book with isbn={}: {}'.format(isbn, _list_str(borrowers)))
-
 
 @cli.command()
 @click.argument('username', required=True)
@@ -300,7 +281,6 @@ def get_borrowed_books(config, username):
         Get the books a borrower has borrowed
 
     '''
-
     books = config.client.get_borrowed_books(username)
     if len(books) == 0:
         click.echo('The user with username={} has not checked out any book'.format(username))

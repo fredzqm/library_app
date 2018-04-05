@@ -11,6 +11,6 @@ setup(
    py_modules=['library_cli'],
    entry_points='''
        [console_scripts]
-       library_cli=library_app.library_app_cli:cli
+       library_cli=library_app.library_app_cli:safe_cli
    ''',
 )
