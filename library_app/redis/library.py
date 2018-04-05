@@ -1,5 +1,5 @@
 import redis
-from library_app.model import Book, Borrower
+from library_app.model import Book, Borrower, Library
 
 conn = redis.Redis()
 
@@ -163,7 +163,7 @@ class BorrowerProxy:
     def get_borrowed_book_num(self):
         return get_redis().scard('borrower:checkoutby-'+self.borrower_key)
 
-class RedisLibrary:
+class RedisLibrary(Library):
     def drop_db(self):
         get_redis().flushall()
 
@@ -219,10 +219,6 @@ class RedisLibrary:
     def sort_by_page_num(self):  # return all books
         return BookProxy.get_books(get_redis().sort('book:keys', by='*->page_num', alpha=True))
 
-    '''
-        return False if user already existed
-    '''
-
     def add_borrower(self, borrower):
         if borrower is None or not borrower.username:
             raise Exception('required_field_borrower.username')
@@ -251,9 +247,6 @@ class RedisLibrary:
     def search_by_name(self, name):
         return BorrowerProxy.get_borrowers(get_redis().smembers('borrower:name-' + name))
 
-    '''
-        return False if already borrowed by someone else
-    '''
     def checkout_book(self, username, book_id):
         borrowerProxy = BorrowerProxy(username)
         if not borrowerProxy.exists():
