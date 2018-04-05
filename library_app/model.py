@@ -1,5 +1,5 @@
 class Book:
-    def __init__(self, title=None, author=None, isbn=None, page_num=None, quantity=None):
+    def __init__(self, title=None, author=[], isbn=None, page_num=None, quantity=None):
         if page_num is not None and type(page_num) != int:
             page_num = int(page_num)
         if quantity is not None and type(quantity) != int:

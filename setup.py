@@ -7,7 +7,7 @@ setup(
    author='Fred',
    author_email='zhangq2@rose-hulman.com',
    packages=[''],  #same as name
-   install_requires=['redis', 'click'], #external packages as dependencies
+   install_requires=['redis', 'pymongo', 'click'], #external packages as dependencies
    py_modules=['library_cli'],
    entry_points='''
        [console_scripts]

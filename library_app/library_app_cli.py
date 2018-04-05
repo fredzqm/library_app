@@ -34,7 +34,7 @@ def drop_db(config):
 @cli.command()
 @click.argument('isbn', required=True)
 @click.option('--title', '-t', required=True, help='The title of the book')
-@click.option('--author', '-a', required=True, help='The author of the book')
+@click.option('--author', '-a', required=True, nargs=-1, help='The author of the book')
 @click.option('--page-num', '-p', required=True, type=click.INT, help='The page number of the book')
 @click.option('--quantity', '-q', default=1, type=click.INT, help='The quantity of the book')
 @config
@@ -81,7 +81,7 @@ def delete_book(config, isbn):
 @cli.command()
 @click.argument('isbn', required=True)
 @click.option('--title', '-b', default=None, help='The title of the book')
-@click.option('--author', '-a', default=None, help='The author of the book')
+@click.option('--author', '-a', nargs=-1, help='The author of the book')
 @click.option('--isbn', '-i', default=None, help='The isbn of the book')
 @click.option('--page-num', '-p', default=None, type=click.INT, help='The page number of the book')
 @click.option('--quantity', '-q', default=1, type=click.INT, help='The quantity of the book')

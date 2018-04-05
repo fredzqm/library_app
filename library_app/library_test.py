@@ -1,9 +1,9 @@
 from .model import Book, Borrower
 from copy import copy
 
-book_toadd = Book(title='book small', author='Sriram', isbn='1', page_num=200, quantity=3)
-book_toadd2 = Book(title='book medium', author='Chandan', isbn='2', page_num=300, quantity=2)
-book_toadd3 = Book(title='book big', author='Chandan', isbn='3', page_num=300, quantity=1)
+book_toadd = Book(title='book small', author=['Sriram'], isbn='1', page_num=200, quantity=3)
+book_toadd2 = Book(title='book medium', author=['Chandan'], isbn='2', page_num=300, quantity=2)
+book_toadd3 = Book(title='book big', author=['Chandan', 'Sriram'], isbn='3', page_num=300, quantity=1)
 browser_toadd1 = Borrower(username='zhangq1', name='Fred', phone='111')
 browser_toadd2 = Borrower(username='zhangq2', name='Fred', phone='112')
 browser_toadd3 = Borrower(username='zhangq3', name='Daniel', phone='113')
@@ -176,6 +176,11 @@ class LibraryTest(object):
 
         self.assertListEqual(books, [book_toadd])
 
+    def test_search_by_title_empty(self):
+        books = self.client.search_by_title('???')
+
+        self.assertListEqual(books, [])
+
     def test_search_by_title_after_edit(self):
         self.client.add_book(book_toadd2)
         self.client.edit_book('2', Book(title=book_toadd.title))
@@ -186,9 +191,25 @@ class LibraryTest(object):
         self.assertCountEqual(books, [book_toadd, edited_book_toadd_2])
 
     def test_search_by_author(self):
-        books = self.client.search_by_author(book_toadd.author)
+        self.client.add_book(book_toadd2)
+        self.client.add_book(book_toadd3)
+        books = self.client.search_by_author(book_toadd.author[0])
 
-        self.assertListEqual(books, [book_toadd])
+        self.assertCountEqual(books, [book_toadd, book_toadd3])
+
+    def test_search_by_author2(self):
+        self.client.add_book(book_toadd2)
+        self.client.add_book(book_toadd3)
+        books = self.client.search_by_author(book_toadd2.author[0])
+
+        self.assertCountEqual(books, [book_toadd2, book_toadd3])
+
+    def test_search_by_author_empty(self):
+        self.client.add_book(book_toadd2)
+        self.client.add_book(book_toadd3)
+        books = self.client.search_by_author('no one')
+
+        self.assertCountEqual(books, [])
 
     def test_sort_by_isbn(self):
         self.client.add_book(book_toadd3)

@@ -1,5 +1,33 @@
-import redis
 from library_app.model import Book, Borrower, Library
+from pymongo import MongoClient
+
+client = MongoClient()
+db = client['library_db']
+
+def get_mongo_db(collection):
+    return db[collection]
+
+def book_to_dict(book):
+    return {
+        'title': book.title,
+        'author': book.author,
+        'isbn': book.isbn,
+        'page_num': book.page_num,
+        'quantity': book.quantity
+    }
+
+def dict_to_book(dict):
+    return Book(title=dict['title'], author=dict['author'], isbn=dict['isbn'], page_num=dict['page_num'], quantity=dict['quantity'])
+
+def borrower_to_dict(book):
+    return {
+        'username': book.username,
+        'name': book.name,
+        'phone': book.phone
+    }
+
+def dict_to_borrower(dict):
+    return Borrower(username=dict['username'], name=dict['name'], phone=dict['phone'])
 
 
 class MongoLibrary:
@@ -8,7 +36,7 @@ class MongoLibrary:
             Drop the whole database so we can start from scratch
 
         '''
-        raise NotImplementedError()
+        client.drop_database('library_db')
 
     def add_book(self, book):
         '''
@@ -16,7 +44,7 @@ class MongoLibrary:
         :param book:
         :raise: 'required_field_book.isbn', 'required_posivitive_field_book.page_num', 'posivitive_field_book.quantity', 'book_exist_already'
         '''
-        raise NotImplementedError()
+        get_mongo_db('book').insert_one(book_to_dict(book))
 
     def get_book(self, isbn):
         '''
@@ -24,7 +52,7 @@ class MongoLibrary:
         :param book_id:
         :return: get the book by isbn
         '''
-        raise NotImplementedError()
+        return dict_to_book(get_mongo_db('book').find_one({'isbn': isbn}))
 
     def delete_book(self, isbn):
         '''
@@ -93,7 +121,7 @@ class MongoLibrary:
         :param borrower:
         :raise: 'required_field_borrower.username', 'borrower_already_exists'
         '''
-        raise NotImplementedError()
+        get_mongo_db('borrower').insert_one(borrower_to_dict(borrower))
 
     def get_borrower(self, username):
         '''
@@ -101,7 +129,7 @@ class MongoLibrary:
         :param username:
         :return: the borrower with this username
         '''
-        raise NotImplementedError()
+        return dict_to_borrower(get_mongo_db('borrower').find_one({'username': username}))
 
     def delete_borrower(self, username):
         '''

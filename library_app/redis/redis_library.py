@@ -1,5 +1,5 @@
-import redis
 from library_app.model import Book, Borrower, Library
+import redis
 
 conn = redis.Redis()
 
@@ -47,9 +47,10 @@ class BookProxy:
             key = str(key, 'utf-8')
         if len(dict) == 0:
             return None
+        commaSeparatedAuthor = parse_dict(dict, b'author')
         return Book(isbn=key[5:],
                     title=parse_dict(dict, b'title'),
-                    author=parse_dict(dict, b'author'),
+                    author=commaSeparatedAuthor.split(';')  if commaSeparatedAuthor else [],
                     page_num=int(parse_dict(dict, b'page_num')),
                     quantity=int(parse_dict(dict, b'quantity')))
 
@@ -89,7 +90,16 @@ class BookProxy:
         set_hash_and_update_set_reference(self.book_key, 'title', 'book:title-', title)
 
     def set_author(self, author):
-        set_hash_and_update_set_reference(self.book_key, 'author', 'book:author-', author)
+        if not author:
+            author = []
+
+        oldValue = set_hash(self.book_key, 'author', ';'.join(author))
+        if oldValue:
+            oldAuthors = oldValue.split(';')
+            for oAuthor in oldAuthors:
+                update_set_reference(self.book_key, 'book:author-', oAuthor, None)
+        for nAuthor in author:
+            update_set_reference(self.book_key, 'book:author-', None, nAuthor)
 
     def set_quantity(self, quantity):
         if not type(quantity) == int:
@@ -172,6 +182,8 @@ class RedisLibrary(Library):
             raise Exception('required_field_book.isbn')
         if book.page_num is None or type(book.page_num) is not int or book.page_num <= 0:
             raise Exception('required_posivitive_field_book.page_num')
+        if book.author is None or type(book.author) is not list:
+            raise Exception('required_list_field_book.author')
         if book.quantity is None:
             book.quantity = 1
         elif type(book.quantity) is not int or book.quantity <= 0:
