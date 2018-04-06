@@ -1,5 +1,6 @@
-from .model import Book, Borrower
 from copy import copy
+
+from .model import Book, Borrower
 
 book_toadd = Book(title='book small', author=['Sriram'], isbn='1', page_num=200, quantity=3)
 book_toadd2 = Book(title='book medium', author=['Chandan'], isbn='2', page_num=300, quantity=2)

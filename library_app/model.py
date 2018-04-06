@@ -12,33 +12,34 @@ class Book:
 
     def __repr__(self):
         return ('isbn: {} title: {} author: {} page_num: {} quantity: {}'.
-            format(self.isbn, self.title, self.author, self.page_num, self.quantity))
+                format(self.isbn, self.title, self.author, self.page_num, self.quantity))
 
     def __eq__(self, other):
         return (
-            self.isbn == other.isbn and
-            self.title == other.title and
-            self.author == other.author and
-            self.page_num == other.page_num and
-            self.quantity == other.quantity)
+                self.isbn == other.isbn and
+                self.title == other.title and
+                self.author == other.author and
+                self.page_num == other.page_num and
+                self.quantity == other.quantity)
 
     def __hash__(self):
         return hash(str(self))
+
 
 class Borrower:
     def __init__(self, username=None, name=None, phone=None):
         self.username = username
         self.name = name
-        self.phone = phone    
+        self.phone = phone
 
     def __repr__(self):
         return 'username: {} name: {} phone: {}'.format(self.username, self.name, self.phone)
 
     def __eq__(self, other):
         return (
-            self.username == other.username and 
-            self.name == other.name and 
-            self.phone == other.phone)
+                self.username == other.username and
+                self.name == other.name and
+                self.phone == other.phone)
 
     def __hash__(self):
         return hash(str(self))
@@ -206,7 +207,6 @@ class Library:
         :raise: 'book_not_exists'
         '''
         raise NotImplementedError()
-
 
     def get_borrowed_books(self, username):
         '''

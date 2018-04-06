@@ -1,6 +1,7 @@
 import unittest
-from .mongo_library import MongoLibrary
+
 from library_app.library_test import LibraryTest
+from .mongo_library import MongoLibrary
 
 
 class MongoLibraryTest(LibraryTest, unittest.TestCase):

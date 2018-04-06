@@ -1,8 +1,8 @@
 import click
 
 from .config import Config
-from .redis.redis_library import RedisLibrary
 from .model import Book, Borrower
+from .redis.redis_library import RedisLibrary
 
 config = click.make_pass_decorator(Config, ensure=True)
 
@@ -19,11 +19,13 @@ def cli(config, backend):
     if backend == 'redis':
         config.client = RedisLibrary()
 
+
 def safe_cli():
     try:
         cli()
     except Exception as e:
         click.echo('Invalid operation due to {}'.format(e))
+
 
 @cli.command()
 @config
@@ -51,6 +53,7 @@ def add_book(config, isbn, title, author, page_num, quantity=1):
     book = Book(isbn=isbn, title=title, author=author, page_num=page_num, quantity=quantity)
     config.client.add_book(book)
     click.echo('Created {} book with isbn={}: {}'.format(book.quantity, book.isbn, _list_str([book])))
+
 
 @cli.command()
 @click.argument('isbn', required=True)
@@ -272,6 +275,7 @@ def get_book_borrowers(config, isbn):
         click.echo('The book with isbn={} has not been checked out'.format(isbn))
     else:
         click.echo('The borrowers who has checked out book with isbn={}: {}'.format(isbn, _list_str(borrowers)))
+
 
 @cli.command()
 @click.argument('username', required=True)
