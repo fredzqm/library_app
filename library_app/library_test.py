@@ -137,6 +137,9 @@ class LibraryTest(object):
         book_toadd_edited.title = 'new book title'
         self.assertEqual(self.client.get_book('1'), book_toadd_edited)
 
+    def test_edit_book_empty_edit(self):
+        self.client.edit_book('1', Book())
+
     def test_edit_book_not_exists(self):
         with self.assertRaises(Exception) as context:
             self.client.edit_book('10', Book())
@@ -407,7 +410,12 @@ class LibraryTest(object):
             self.client.return_book('zhangq1', '1')
         self.assertEqual('book_not_borrowed', str(context.exception))
 
-    def test_get_book_borrowers_book_not_exists000(self):
+    def test_get_borrowed_books_borrower_not_exists(self):
+        with self.assertRaises(Exception) as context:
+            self.client.get_borrowed_books('no_one')
+        self.assertEqual('borrower_not_exists', str(context.exception))
+
+    def test_get_book_borrowers_book_not_exists(self):
         with self.assertRaises(Exception) as context:
             self.client.get_book_borrowers('non_exist_book')
         self.assertEqual('book_not_exists', str(context.exception))

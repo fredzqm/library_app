@@ -24,6 +24,7 @@ def set_hash(hash_key, entity, value):
         get_redis().hset(hash_key, entity, value)
     return oldValue
 
+
 def update_set_reference(refer_key, set_prefix, oldValue, newValue):
     if oldValue and newValue:
         get_redis().smove(set_prefix + oldValue, set_prefix + newValue, refer_key)
@@ -32,9 +33,11 @@ def update_set_reference(refer_key, set_prefix, oldValue, newValue):
     elif newValue:
         get_redis().sadd(set_prefix + newValue, refer_key)
 
+
 def set_hash_and_update_set_reference(hash_key, entity, set_prefix, value):
     oldValue = set_hash(hash_key, entity, value)
     update_set_reference(hash_key, set_prefix, oldValue, value)
+
 
 class BookProxy:
     def __init__(self, isbn):
@@ -50,7 +53,7 @@ class BookProxy:
         commaSeparatedAuthor = parse_dict(dict, b'author')
         return Book(isbn=key[5:],
                     title=parse_dict(dict, b'title'),
-                    author=commaSeparatedAuthor.split(';')  if commaSeparatedAuthor else [],
+                    author=commaSeparatedAuthor.split(';') if commaSeparatedAuthor else [],
                     page_num=int(parse_dict(dict, b'page_num')),
                     quantity=int(parse_dict(dict, b'quantity')))
 
@@ -113,18 +116,19 @@ class BookProxy:
         set_hash(self.book_key, 'page_num', page_num)
 
     def get_borrower_num(self):
-        return get_redis().scard('book:checkoutby-'+self.book_key)
+        return get_redis().scard('book:checkoutby-' + self.book_key)
 
     def is_borrower(self, borrowerProxy):
-        return get_redis().sismember('book:checkoutby-'+self.book_key, borrowerProxy.borrower_key)
+        return get_redis().sismember('book:checkoutby-' + self.book_key, borrowerProxy.borrower_key)
 
     def add_borrower(self, borrowerProxy):
-        get_redis().sadd('book:checkoutby-'+self.book_key, borrowerProxy.borrower_key)
-        get_redis().sadd('borrower:checkoutby-'+borrowerProxy.borrower_key, self.book_key)
+        get_redis().sadd('book:checkoutby-' + self.book_key, borrowerProxy.borrower_key)
+        get_redis().sadd('borrower:checkoutby-' + borrowerProxy.borrower_key, self.book_key)
 
     def remove_borrower(self, borrowerProxy):
-        get_redis().srem('book:checkoutby-'+self.book_key, borrowerProxy.borrower_key)
-        get_redis().srem('borrower:checkoutby-'+borrowerProxy.borrower_key, self.book_key)
+        get_redis().srem('book:checkoutby-' + self.book_key, borrowerProxy.borrower_key)
+        get_redis().srem('borrower:checkoutby-' + borrowerProxy.borrower_key, self.book_key)
+
 
 class BorrowerProxy:
     def __init__(self, username):
@@ -171,31 +175,23 @@ class BorrowerProxy:
             get_redis().hset(self.borrower_key, 'phone', phone)
 
     def get_borrowed_book_num(self):
-        return get_redis().scard('borrower:checkoutby-'+self.borrower_key)
+        return get_redis().scard('borrower:checkoutby-' + self.borrower_key)
+
 
 class RedisLibrary(Library):
     def drop_db(self):
         get_redis().flushall()
 
     def add_book(self, book):
-        if book is None or not book.isbn:
-            raise Exception('required_field_book.isbn')
-        if book.page_num is None or type(book.page_num) is not int or book.page_num <= 0:
-            raise Exception('required_posivitive_field_book.page_num')
-        if book.author is None or (type(book.author) is not list and type(book.author) is not tuple):
-            raise Exception('required_list_field_book.author')
-        if book.quantity is None:
-            book.quantity = 1
-        elif type(book.quantity) is not int or book.quantity <= 0:
-            raise Exception('posivitive_field_book.quantity')
+        Library.add_book(self, book)
         bookproxy = BookProxy(book.isbn)
         if bookproxy.exists():
             raise Exception('book_exist_already')
         bookproxy.add()
         bookproxy.edit(book)
 
-    def get_book(self, book_id):
-        return BookProxy(book_id).fetch()
+    def get_book(self, isbn):
+        return BookProxy(isbn).fetch()
 
     def delete_book(self, isbn):
         proxy = BookProxy(isbn)
@@ -232,8 +228,7 @@ class RedisLibrary(Library):
         return BookProxy.get_books(get_redis().sort('book:keys', by='*->page_num', alpha=True))
 
     def add_borrower(self, borrower):
-        if borrower is None or not borrower.username:
-            raise Exception('required_field_borrower.username')
+        Library.add_borrower(self, borrower)
         proxy = BorrowerProxy(borrower.username)
         if proxy.exists():
             raise Exception('borrower_already_exists')
@@ -259,11 +254,11 @@ class RedisLibrary(Library):
     def search_by_name(self, name):
         return BorrowerProxy.get_borrowers(get_redis().smembers('borrower:name-' + name))
 
-    def checkout_book(self, username, book_id):
+    def checkout_book(self, username, isbn):
         borrowerProxy = BorrowerProxy(username)
         if not borrowerProxy.exists():
             raise Exception('borrower_not_exists')
-        proxy = BookProxy(book_id)
+        proxy = BookProxy(isbn)
         if not proxy.exists():
             raise Exception('book_not_exists')
         # verify availability
@@ -273,11 +268,11 @@ class RedisLibrary(Library):
             raise Exception('book_not_available')
         proxy.add_borrower(borrowerProxy)
 
-    def return_book(self, username, book_id):
+    def return_book(self, username, isbn):
         borrowerProxy = BorrowerProxy(username)
         if not borrowerProxy.exists():
             raise Exception('borrower_not_exists')
-        proxy = BookProxy(book_id)
+        proxy = BookProxy(isbn)
         if not proxy.exists():
             raise Exception('book_not_exists')
         # verify indeed borrowed
@@ -296,4 +291,3 @@ class RedisLibrary(Library):
         if not proxy.exists():
             raise Exception('borrower_not_exists')
         return BookProxy.get_books(get_redis().smembers('borrower:checkoutby-' + proxy.borrower_key))
-

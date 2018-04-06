@@ -50,7 +50,7 @@ class Library:
             Drop the whole database so we can start from scratch
 
         '''
-        raise NotImplementedError()
+        pass
 
     def add_book(self, book):
         '''
@@ -58,15 +58,24 @@ class Library:
         :param book:
         :raise: 'required_field_book.isbn', 'required_posivitive_field_book.page_num', 'posivitive_field_book.quantity', 'book_exist_already'
         '''
-        raise NotImplementedError()
+        if book is None or not book.isbn:
+            raise Exception('required_field_book.isbn')
+        if book.page_num is None or type(book.page_num) is not int or book.page_num <= 0:
+            raise Exception('required_posivitive_field_book.page_num')
+        if book.author is None or (type(book.author) is not list and type(book.author) is not tuple):
+            raise Exception('required_list_field_book.author')
+        if book.quantity is None:
+            book.quantity = 1
+        elif type(book.quantity) is not int or book.quantity <= 0:
+            raise Exception('posivitive_field_book.quantity')
 
     def get_book(self, isbn):
         '''
 
-        :param book_id:
+        :param isbn:
         :return: get the book by isbn
         '''
-        raise NotImplementedError()
+        pass
 
     def delete_book(self, isbn):
         '''
@@ -74,7 +83,7 @@ class Library:
         :param isbn:
         :raise: 'book_not_exists', 'book_borrowed'
         '''
-        raise NotImplementedError()
+        pass
 
     def edit_book(self, isbn, book):
         '''
@@ -135,7 +144,8 @@ class Library:
         :param borrower:
         :raise: 'required_field_borrower.username', 'borrower_already_exists'
         '''
-        raise NotImplementedError()
+        if borrower is None or not borrower.username:
+            raise Exception('required_field_borrower.username')
 
     def get_borrower(self, username):
         '''
@@ -170,20 +180,20 @@ class Library:
         '''
         raise NotImplementedError()
 
-    def checkout_book(self, username, book_id):
+    def checkout_book(self, username, isbn):
         '''
 
         :param username:
-        :param book_id:
-        :raise 'book_not_exists', 'book_already_borrowed', 'book_not_available'
+        :param isbn:
+        :raise 'book_not_exists', 'borrower_not_exists', 'book_already_borrowed', 'book_not_available'
         '''
         raise NotImplementedError()
 
-    def return_book(self, username, book_id):
+    def return_book(self, username, isbn):
         '''
 
         :param username:
-        :param book_id:
+        :param isbn:
         :raise: `borrower_not_exists`, `book_not_exists`, `book_not_borrowed`
         '''
         raise NotImplementedError()
