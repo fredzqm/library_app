@@ -3,6 +3,7 @@ import click
 from .config import Config
 from .model import Book, Borrower
 from .redis.redis_library import RedisLibrary
+from .mongo.mongo_library import MongoLibrary
 
 config = click.make_pass_decorator(Config, ensure=True)
 
@@ -12,12 +13,14 @@ def _list_str(books):
 
 
 @click.group()
-@click.option('--backend', '-b', default='redis', help='Specify the backend of this library')
+@click.option('--backend', '-b', default='mongo', help='Specify the backend of this library')
 @click.pass_context
 @config
 def cli(config, backend):
     if backend == 'redis':
         config.client = RedisLibrary()
+    if backend == 'mongo':
+        config.client = MongoLibrary()
 
 
 def safe_cli():
