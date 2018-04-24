@@ -2,8 +2,8 @@ import click
 
 from .config import Config
 from .model import Book, Borrower
-from .redis.redis_library import RedisLibrary
 from .mongo.mongo_library import MongoLibrary
+from .redis.redis_library import RedisLibrary
 
 config = click.make_pass_decorator(Config, ensure=True)
 
@@ -87,13 +87,14 @@ def delete_book(config, isbn):
 
 @cli.command()
 @click.argument('isbn', required=True)
-@click.option('--title', '-b', default=None, help='The title of the book')
+@click.option('--title', '-t', default=None, help='The title of the book')
+@click.option('--override/--partial', '-o', is_flag=True, default=False, help='whether to override override')
 @click.option('--author', '-a', multiple=True, help='The author of the book')
 @click.option('--isbn', '-i', default=None, help='The isbn of the book')
 @click.option('--page-num', '-p', default=None, type=click.INT, help='The page number of the book')
 @click.option('--quantity', '-q', default=1, type=click.INT, help='The quantity of the book')
 @config
-def edit_book(config, isbn, title, author, page_num, quantity):
+def edit_book(config, isbn, title, author, page_num, quantity, override):
     '''
         Edit a book with isbn id
 
@@ -101,7 +102,7 @@ def edit_book(config, isbn, title, author, page_num, quantity):
     if len(author) == 0:
         author = None
     book = Book(title=title, author=author, isbn=isbn, page_num=page_num, quantity=quantity)
-    config.client.edit_book(isbn, book)
+    config.client.edit_book(isbn, book, override=override)
     click.echo('Updated the book with isbn={} to {}'.format(book.isbn, _list_str([config.client.get_book(isbn)])))
 
 

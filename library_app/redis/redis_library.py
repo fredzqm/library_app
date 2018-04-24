@@ -14,6 +14,10 @@ def parse_dict(dict, key):
         return str(dict.get(key), 'utf-8')
     return None
 
+def parse_dict_int(dict, key):
+    v = parse_dict(dict, key)
+    return int(v) if v else None
+
 
 def set_hash(hash_key, entity, value):
     oldValue = get_redis().hget(hash_key, entity)
@@ -55,8 +59,8 @@ class BookProxy:
         return Book(isbn=key[5:],
                     title=parse_dict(dict, b'title'),
                     author=commaSeparatedAuthor.split(';') if commaSeparatedAuthor else [],
-                    page_num=int(parse_dict(dict, b'page_num')),
-                    quantity=int(parse_dict(dict, b'quantity')))
+                    page_num=parse_dict_int(dict, b'page_num'),
+                    quantity=parse_dict_int(dict, b'quantity'))
 
     @staticmethod
     def get_books(book_keys):
@@ -71,12 +75,12 @@ class BookProxy:
     def exists(self):
         return self.book_key in get_redis()
 
-    def edit(self, book):
-        if book.title:
+    def edit(self, book, override):
+        if override or book.title:
             self.set_title(book.title)
-        if book.author:
+        if override or book.author:
             self.set_author(book.author)
-        if book.page_num:
+        if override or book.page_num:
             self.set_page_num(book.page_num)
         if book.quantity:
             self.set_quantity(book.quantity)
@@ -189,7 +193,7 @@ class RedisLibrary(Library):
         if bookproxy.exists():
             raise Exception('book_exist_already')
         bookproxy.add()
-        bookproxy.edit(book)
+        bookproxy.edit(book, True)
 
     def get_book(self, isbn):
         return BookProxy(isbn).fetch()
@@ -202,13 +206,13 @@ class RedisLibrary(Library):
             raise Exception('book_borrowed')
         proxy.delete()
 
-    def edit_book(self, isbn, book):
+    def edit_book(self, isbn, book, override=False):
         proxy = BookProxy(isbn)
         if not proxy.exists():
             raise Exception('book_not_exists')
         if book.quantity != None and book.quantity < proxy.get_borrower_num():
             raise Exception('book_borrowed')
-        proxy.edit(book)
+        proxy.edit(book, override)
 
     def search_by_title(self, title):
         return BookProxy.get_books(get_redis().smembers('book:title-' + title))

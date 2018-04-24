@@ -80,7 +80,7 @@ class MongoLibrary(Library):
         if result.deleted_count == 0:
             raise Exception('book_not_exists')
 
-    def edit_book(self, isbn, book):
+    def edit_book(self, isbn, book, override=False):
         if not get_mongo_collection('book').find_one(isbn):
             raise Exception('book_not_exists')
         if book.quantity:
@@ -90,9 +90,14 @@ class MongoLibrary(Library):
         book = copy(book)
         book.isbn = None
         book_dict = book_to_dict(book)
-        if len(book_dict) == 0:
-            return
-        get_mongo_collection('book').find_one_and_update({'_id': isbn}, {'$set': book_dict})
+        if override:
+            if 'quantity' not in book_dict:
+                book_dict['quantity'] = get_mongo_collection('book').find_one({'_id': isbn})['quantity']
+            get_mongo_collection('book').find_one_and_replace({'_id': isbn}, book_dict)
+        else:
+            if len(book_dict) == 0:
+                return
+            get_mongo_collection('book').find_one_and_update({'_id': isbn}, {'$set': book_dict})
 
     def search_by_title(self, title):
         return [dict_to_book(dict) for dict in get_mongo_collection('book').find({'title': title})]

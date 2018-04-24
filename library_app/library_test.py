@@ -141,11 +141,29 @@ class LibraryTest(object):
 
     def test_edit_book_empty_edit(self):
         self.client.edit_book('1', Book())
+        self.assertEqual(self.client.get_book('1'), book_toadd)
+
+    def test_edit_book_override_edit(self):
+        self.client.edit_book('1', Book(), override=True)
+        self.assertEqual(self.client.get_book('1'), Book(isbn='1', quantity=3))
+
+    def test_edit_book_override_edit2(self):
+        self.client.add_book(book_toadd2)
+        self.client.edit_book('2', Book(), override=True)
+        self.assertEqual(self.client.get_book('2'), Book(isbn='2', quantity=2))
+
+    def test_edit_book_override_no_title_edit(self):
+        no_title = copy(book_toadd)
+        no_title.title = None
+        no_title.quantity = 1
+        self.client.edit_book('1', no_title, override=True)
+        self.assertEqual(self.client.get_book('1'), no_title)
 
     def test_edit_book_not_exists(self):
         with self.assertRaises(Exception) as context:
             self.client.edit_book('10', Book())
         self.assertEqual('book_not_exists', str(context.exception))
+        self.assertEqual(self.client.get_book('10'), None)
 
     def test_edit_book_quantity_up(self):
         self.client.checkout_book('zhangq1', '1')
