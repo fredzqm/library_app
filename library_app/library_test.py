@@ -114,6 +114,7 @@ class LibraryTest(object):
         with self.assertRaises(Exception) as context:
             self.client.delete_book('1')
         self.assertEqual('book_borrowed', str(context.exception))
+        self.assertEqual(self.client.get_book('1'), book_toadd)
 
     def test_delete_book_returned(self):
         self.client.checkout_book('zhangq1', '1')
@@ -263,6 +264,7 @@ class LibraryTest(object):
         with self.assertRaises(Exception) as context:
             self.client.delete_borrower('zhangq1')
         self.assertEqual('book_borrowed', str(context.exception))
+        self.assertEqual(self.client.get_borrower('zhangq1'), browser_toadd1)
 
     def test_edit_browser(self):
         self.client.edit_borrower('zhangq1', Borrower(phone='300'))

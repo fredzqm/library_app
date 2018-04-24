@@ -120,11 +120,11 @@ class MongoLibrary(Library):
         return dict_to_borrower(get_mongo_collection('borrower').find_one(username))
 
     def delete_borrower(self, username):
+        if get_mongo_collection('checkout').find_one({'borrower': DBRef('borrower', username)}):
+            raise Exception('book_borrowed')
         result = get_mongo_collection('borrower').delete_one({'_id': username})
         if result.deleted_count == 0:
             raise Exception('borrower_not_exists')
-        if get_mongo_collection('checkout').find_one({'borrower': DBRef('borrower', username)}):
-            raise Exception('book_borrowed')
 
     def edit_borrower(self, username, borrower):
         if not get_mongo_collection('borrower').find_one(username):
