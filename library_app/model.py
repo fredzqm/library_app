@@ -216,3 +216,38 @@ class Library:
         :raise: 'borrower_not_exists'
         '''
         raise NotImplementedError()
+
+    def rate_book(self, username, isbn, rating):
+        '''
+
+        :param username:
+        :param isbn:
+        :param rating:
+        :return:
+        :raise: 'borrower_not_exists'
+        :raise: 'book_not_exists'
+        :raise: 'rating_between_1_and_5'
+        :raise: 'book_not_checked_out'
+        '''
+        pass
+
+    def get_rating(self, username, isbn):
+        '''
+
+        :param username:
+        :param isbn:
+        :return:
+        :raise: 'borrower_not_exists'
+        :raise: 'book_not_exists'
+        :raise: 'book_not_checked_out'
+        '''
+        return 0
+
+    def recommend(self, username):
+        '''
+
+        :param username:
+        :raise: 'borrower_not_exists'
+        :return:
+        '''
+        return []

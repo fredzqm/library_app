@@ -59,7 +59,7 @@ def dict_to_borrower(dict):
     return Borrower(username=dict.get('username'), name=dict.get('name'), phone=dict.get('phone'))
 
 
-class Neo4jLibrary:
+class Neo4jLibrary(Library):
     def drop_db(self):
         '''
             Drop the whole database so we can start from scratch
@@ -403,3 +403,24 @@ class Neo4jLibrary:
                           "return c.rating", username=username, isbn=isbn):
             return x['c.rating']
         return 0
+
+    def recommend(self, username):
+        '''
+
+        :param username:
+        :raise: 'borrower_not_exists'
+        :return:
+        '''
+        if not self.get_borrower(username):
+            raise Exception('borrower_not_exists')
+        already_borrowed = [b.isbn for b in self.get_borrowed_books(username)]
+        ls = []
+        for x in sess.run(
+                "MATCH (x:borrower)-[c1:checkout]->(b:book)<-[c2:checkout]-(y:borrower)-[c3:checkout]->(r:book) "
+                "WHERE x.username = {username} and c1.rating=c2.rating and c3.rating>3 "
+                "RETURN r", username=username):
+            book = dict_to_book(x['r'])
+            if book.isbn not in already_borrowed:
+                ls.append(book)
+                already_borrowed.append(book.isbn)
+        return ls

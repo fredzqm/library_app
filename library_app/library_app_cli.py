@@ -294,3 +294,33 @@ def get_borrowed_books(config, username):
         click.echo('The user with username={} has not checked out any book'.format(username))
     else:
         click.echo('The user with username={} has checked out {}'.format(username, _list_str(books)))
+
+
+@cli.command()
+@click.argument('username', required=True)
+@config
+def get_borrowed_books(config, username):
+    '''
+        Get the books a borrower has borrowed
+
+    '''
+    books = config.client.get_borrowed_books(username)
+    if len(books) == 0:
+        click.echo('The user with username={} has not checked out any book'.format(username))
+    else:
+        click.echo('The user with username={} has checked out {}'.format(username, _list_str(books)))
+
+@cli.command()
+@click.argument('username', required=True)
+@config
+def get_borrowed_books(config, username):
+    '''
+        Get the books a borrower has borrowed
+
+    '''
+    books = config.client.get_borrowed_books(username)
+    if len(books) == 0:
+        click.echo('The user with username={} has not checked out any book'.format(username))
+    else:
+        click.echo('The user with username={} has checked out {}'.format(username, _list_str(books)))
+
