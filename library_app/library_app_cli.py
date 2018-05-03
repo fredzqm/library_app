@@ -3,6 +3,7 @@ import click
 from .config import Config
 from .model import Book, Borrower
 from .mongo.mongo_library import MongoLibrary
+from .neo4j.neo4j_library import Neo4jLibrary
 from .redis.redis_library import RedisLibrary
 
 config = click.make_pass_decorator(Config, ensure=True)
@@ -13,7 +14,7 @@ def _list_str(books):
 
 
 @click.group()
-@click.option('--backend', '-b', default='mongo', help='Specify the backend of this library')
+@click.option('--backend', '-b', default='neo4j', help='Specify the backend of this library')
 @click.pass_context
 @config
 def cli(config, backend):
@@ -21,6 +22,8 @@ def cli(config, backend):
         config.client = RedisLibrary()
     if backend == 'mongo':
         config.client = MongoLibrary()
+    if backend == 'neo4j':
+        config.client = Neo4jLibrary()
 
 
 def safe_cli():
@@ -54,6 +57,7 @@ def add_book(config, isbn, title, author, page_num, quantity=1):
 
     '''
     book = Book(isbn=isbn, title=title, author=author, page_num=page_num, quantity=quantity)
+    print(book)
     config.client.add_book(book)
     click.echo('Created {} book with isbn={}: {}'.format(book.quantity, book.isbn, _list_str([book])))
 
@@ -310,17 +314,38 @@ def get_borrowed_books(config, username):
     else:
         click.echo('The user with username={} has checked out {}'.format(username, _list_str(books)))
 
+
 @cli.command()
 @click.argument('username', required=True)
+@click.argument('isbn', required=True)
+@click.argument('rating', required=True, type=click.INT)
 @config
-def get_borrowed_books(config, username):
+def rate_book(config, username, isbn, rating):
     '''
         Get the books a borrower has borrowed
 
     '''
-    books = config.client.get_borrowed_books(username)
-    if len(books) == 0:
-        click.echo('The user with username={} has not checked out any book'.format(username))
-    else:
-        click.echo('The user with username={} has checked out {}'.format(username, _list_str(books)))
+    config.client.rate_book(username, isbn, rating)
+    click.echo('The user with username={} rated book with isbn={} as {}'.format(username, isbn, rating))
 
+
+@cli.command()
+@click.argument('username', required=True)
+@click.argument('isbn', required=True)
+@click.argument('rating', required=True, type=click.INT)
+@config
+def get_rating(config, username, isbn):
+    '''
+        Get the books a borrower has borrowed
+
+    '''
+    rating = config.client.get_rating(username, isbn)
+    click.echo('The user with username={} rated book with isbn={} as {}'.format(username, isbn, rating))
+
+
+@cli.command()
+@click.argument('username', required=True)
+@config
+def recommend(config, username):
+    books = config.client.recommend(username)
+    click.echo('The user with username={} can checkout those books{}'.format(username, _list_str(books)))
