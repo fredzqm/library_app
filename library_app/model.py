@@ -86,7 +86,7 @@ class Library:
         '''
         pass
 
-    def edit_book(self, isbn, book):
+    def edit_book(self, isbn, book, override=False):
         '''
 
         :param isbn:
