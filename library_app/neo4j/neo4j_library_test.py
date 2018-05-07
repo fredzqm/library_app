@@ -1,6 +1,6 @@
 import unittest
 
-from library_app.library_test import LibraryTest, book_toadd, book_toadd2, book_toadd3, browser_toadd1,  browser_toadd2,  browser_toadd3,  browser_toadd4
+from library_app.library_test import LibraryTest, book_toadd, book_toadd2, book_toadd3, borrower_toadd1,  borrower_toadd2,  borrower_toadd3,  borrowor_toadd4
 from library_app.model import Book
 from .neo4j_library import Neo4jLibrary
 
@@ -63,7 +63,7 @@ class Neo4jLibraryTest(LibraryTest, unittest.TestCase):
 
     def test_recommend1(self):
         self.client.add_book(book_toadd2)
-        self.client.add_borrower(browser_toadd2)
+        self.client.add_borrower(borrower_toadd2)
         self.client.checkout_book('zhangq1', '1')
         self.client.rate_book('zhangq1', '1', 3)
         self.client.checkout_book('zhangq2', '1')
@@ -76,7 +76,7 @@ class Neo4jLibraryTest(LibraryTest, unittest.TestCase):
 
     def test_recommend_different_rating(self):
         self.client.add_book(book_toadd2)
-        self.client.add_borrower(browser_toadd2)
+        self.client.add_borrower(borrower_toadd2)
         self.client.checkout_book('zhangq1', '1')
         self.client.rate_book('zhangq1', '1', 3)
         self.client.checkout_book('zhangq2', '1')
@@ -89,7 +89,7 @@ class Neo4jLibraryTest(LibraryTest, unittest.TestCase):
 
     def test_recommend_below_4(self):
         self.client.add_book(book_toadd2)
-        self.client.add_borrower(browser_toadd2)
+        self.client.add_borrower(borrower_toadd2)
         self.client.checkout_book('zhangq1', '1')
         self.client.rate_book('zhangq1', '1', 3)
         self.client.checkout_book('zhangq2', '1')
@@ -102,7 +102,7 @@ class Neo4jLibraryTest(LibraryTest, unittest.TestCase):
 
     def test_recommend_already_checkout(self):
         self.client.add_book(book_toadd2)
-        self.client.add_borrower(browser_toadd2)
+        self.client.add_borrower(borrower_toadd2)
         self.client.checkout_book('zhangq1', '1')
         self.client.rate_book('zhangq1', '1', 3)
         self.client.checkout_book('zhangq2', '1')
@@ -117,7 +117,7 @@ class Neo4jLibraryTest(LibraryTest, unittest.TestCase):
     def test_recommend_multiple_book(self):
         self.client.add_book(book_toadd2)
         self.client.add_book(book_toadd3)
-        self.client.add_borrower(browser_toadd2)
+        self.client.add_borrower(borrower_toadd2)
         self.client.checkout_book('zhangq1', '1')
         self.client.rate_book('zhangq1', '1', 3)
         self.client.checkout_book('zhangq2', '1')
@@ -132,8 +132,8 @@ class Neo4jLibraryTest(LibraryTest, unittest.TestCase):
 
     def test_recommend_multiple_recomender(self):
         self.client.add_book(book_toadd2)
-        self.client.add_borrower(browser_toadd2)
-        self.client.add_borrower(browser_toadd3)
+        self.client.add_borrower(borrower_toadd2)
+        self.client.add_borrower(borrower_toadd3)
         self.client.checkout_book('zhangq1', '1')
         self.client.rate_book('zhangq1', '1', 3)
         self.client.checkout_book('zhangq2', '1')
@@ -152,9 +152,9 @@ class Neo4jLibraryTest(LibraryTest, unittest.TestCase):
         self.client.edit_book("1", Book(quantity=10))
         self.client.add_book(book_toadd2)
         self.client.add_book(book_toadd3)
-        self.client.add_borrower(browser_toadd2)
-        self.client.add_borrower(browser_toadd3)
-        self.client.add_borrower(browser_toadd4)
+        self.client.add_borrower(borrower_toadd2)
+        self.client.add_borrower(borrower_toadd3)
+        self.client.add_borrower(borrowor_toadd4)
         self.client.checkout_book('zhangq1', '1')
         self.client.rate_book('zhangq1', '1', 3)
         self.client.checkout_book('zhangq2', '1')
