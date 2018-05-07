@@ -4,6 +4,8 @@ class Book:
             page_num = int(page_num)
         if quantity is not None and type(quantity) != int:
             quantity = int(quantity)
+        if type(author) is tuple:
+            author = list(author)
         self.title = title
         self.author = author
         self.isbn = isbn
@@ -63,8 +65,6 @@ class Library:
             raise Exception('required_field_book.isbn')
         if book.page_num is None or type(book.page_num) is not int or book.page_num <= 0:
             raise Exception('required_posivitive_field_book.page_num')
-        if type(book.author) is tuple:
-            book.author = list(book.author)
         if book.author is None or type(book.author) is not list:
             raise Exception('required_list_field_book.author')
         if book.quantity is None:

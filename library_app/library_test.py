@@ -92,6 +92,11 @@ class LibraryTest(object):
             self.client.add_borrower(Borrower())
         self.assertEqual('required_field_borrower.username', str(context.exception))
 
+    def test_add_borrower_twice(self):
+        with self.assertRaises(Exception) as context:
+            self.client.add_borrower(browser_toadd1)
+        self.assertEqual('borrower_already_exists', str(context.exception))
+
     def test_create_book(self):
         Book(page_num='1', quantity=2)
         Book(page_num=10, quantity='3')

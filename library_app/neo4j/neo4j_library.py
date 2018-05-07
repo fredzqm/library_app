@@ -207,6 +207,8 @@ class Neo4jLibrary(Library):
         :raise: 'required_field_borrower.username', 'borrower_already_exists'
         '''
         Library.add_borrower(self, borrower)
+        if self.get_borrower(borrower.username):
+            raise Exception('borrower_already_exists')
         sess.run("CREATE (:borrower {"
                  "username: {username},"
                  "name: {name},"

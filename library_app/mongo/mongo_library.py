@@ -119,7 +119,10 @@ class MongoLibrary(Library):
 
     def add_borrower(self, borrower):
         Library.add_borrower(self, borrower)
-        get_mongo_collection('borrower').insert_one(borrower_to_dict(borrower))
+        try:
+            get_mongo_collection('borrower').insert_one(borrower_to_dict(borrower))
+        except pymongo.errors.DuplicateKeyError as e:
+            raise Exception('borrower_already_exists')
 
     def get_borrower(self, username):
         return dict_to_borrower(get_mongo_collection('borrower').find_one(username))
