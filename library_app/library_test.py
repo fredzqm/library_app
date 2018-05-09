@@ -2,9 +2,9 @@ from copy import copy
 
 from .model import Book, Borrower
 
-book_toadd = Book(title='book small', author=('Sriram',), isbn='1', page_num=200, quantity=3)
-book_toadd2 = Book(title='book medium', author=['Chandan'], isbn='2', page_num=300, quantity=2)
-book_toadd3 = Book(title='book big', author=('Chandan', 'Sriram'), isbn='3', page_num=300, quantity=1)
+book_toadd = Book(title='book_small', author=('Sriram',), isbn='1', page_num=200, quantity=3)
+book_toadd2 = Book(title='book_medium', author=['Chandan'], isbn='2', page_num=300, quantity=2)
+book_toadd3 = Book(title='book_big', author=('Chandan', 'Sriram'), isbn='3', page_num=300, quantity=1)
 borrower_toadd1 = Borrower(username='zhangq1', name='Fred', phone='111')
 borrower_toadd2 = Borrower(username='zhangq2', name='Fred', phone='112')
 borrower_toadd3 = Borrower(username='zhangq3', name='Daniel', phone='113')
