@@ -129,19 +129,19 @@ class LibraryTest(object):
         self.assertEqual(self.client.get_book('1'), None)
 
     def test_edit_book(self):
-        self.client.edit_book('1', Book(title='new book title'))
+        self.client.edit_book('1', Book(title='new_book_title'))
 
         book_toadd_edited = copy(book_toadd)
-        book_toadd_edited.title = 'new book title'
+        book_toadd_edited.title = 'new_book_title'
         self.assertEqual(self.client.get_book('1'), book_toadd_edited)
 
     def test_edit_and_delete_book(self):
         self.client.add_book(book_toadd2)
-        self.client.edit_book('1', Book(title='new book title'))
+        self.client.edit_book('1', Book(title='new_book_title'))
         self.client.delete_book('2')
 
         book_toadd_edited = copy(book_toadd)
-        book_toadd_edited.title = 'new book title'
+        book_toadd_edited.title = 'new_book_title'
         self.assertEqual(self.client.get_book('1'), book_toadd_edited)
 
     def test_edit_book_empty_edit(self):
@@ -235,7 +235,7 @@ class LibraryTest(object):
     def test_search_by_author_empty(self):
         self.client.add_book(book_toadd2)
         self.client.add_book(book_toadd3)
-        books = self.client.search_by_author('no one')
+        books = self.client.search_by_author('no_one')
 
         self.assertCountEqual(books, [])
 

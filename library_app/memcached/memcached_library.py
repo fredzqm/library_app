@@ -26,7 +26,7 @@ def book_to_str(book):
     if book.author:
         book_dict['author'] = book.author
     else:
-        book_dict['author'] = None
+        book_dict['author'] = []
     if book.page_num:
         book_dict['page_num'] = book.page_num
     else:
@@ -45,6 +45,8 @@ def str_to_book(dict):
     return Book(title=dict.get('title'), author=dict.get('author', []), isbn=dict.get('isbn'),
                 page_num=dict.get('page_num'), quantity=dict.get('quantity'))
 
+def get_books(book_keys):
+    return [str_to_book(get_memcached().get(key)) for key in book_keys]
 
 def borrower_to_str(borrower):
     if not borrower:
@@ -65,6 +67,8 @@ def str_to_borrower(dict):
     dict = json.loads(dict)
     return Borrower(username=dict.get('username'), name=dict.get('name'), phone=dict.get('phone'))
 
+def get_borrowers(borrower_keys):
+    return [str_to_borrower(get_memcached().get(key)) for key in borrower_keys]
 
 def set_hash(hash_key, entity, value):
     oldValue = get_memcached().hget(hash_key, entity)
@@ -77,23 +81,32 @@ def set_hash(hash_key, entity, value):
     return oldValue
 
 
+def get_set(set_key):
+    added = get_memcached().get(set_key)
+    if not added:
+        return []
+    added = set(added.split(','))
+    removed = get_memcached().get('-' + set_key)
+    if removed:
+        removed = set(removed.split(','))
+        added = added - removed
+        get_memcached().set(set_key, ','.join(list(added)))
+        get_memcached().delete('-' + set_key)
+    return added - set([''])
+
 def update_set_reference(refer_key, set_prefix, oldValue, newValue):
     if oldValue:
         get_memcached().add('-' + set_prefix + oldValue, '')
-        get_memcached().append('-' + set_prefix + oldValue, refer_key)
+        get_memcached().append('-' + set_prefix + oldValue, ',' + refer_key)
     if newValue:
         get_memcached().add(set_prefix + newValue, '')
-        get_memcached().append(set_prefix + newValue, refer_key)
+        get_memcached().append(set_prefix + newValue, ',' + refer_key)
 
 
 class BookProxy:
     def __init__(self, isbn):
         self.book_key = 'book:' + str(isbn)
         self.book = str_to_book(get_memcached().get(self.book_key))
-
-    @staticmethod
-    def get_books(book_keys):
-        return [str_to_book(get_memcached().get(key)) for key in book_keys]
 
     def add(self):
         get_memcached().add('book:keys', '')
@@ -103,7 +116,7 @@ class BookProxy:
         get_memcached().set(self.book_key, book_to_str(self.book))
 
     def exists(self):
-        return self.book != None
+        return self.book is not None
 
     def edit(self, book, override):
         if not self.exists():
@@ -120,7 +133,8 @@ class BookProxy:
 
     def delete(self):
         get_memcached().delete(self.book_key)
-        get_memcached().srem('book:keys', self.book_key)
+        get_memcached().add('-book:keys', '')
+        get_memcached().append('-book:keys', self.book_key)
         self.set_title(None)
         self.set_author(None)
         self.set_page_num(None)
@@ -138,11 +152,11 @@ class BookProxy:
             oldValue = self.book.author
         self.book.author = author
         if oldValue:
-            oldAuthors = oldValue.split(';')
-            for oAuthor in oldAuthors:
+            for oAuthor in oldValue:
                 update_set_reference(self.book_key, 'book:author-', oAuthor, None)
-        for nAuthor in author:
-            update_set_reference(self.book_key, 'book:author-', None, nAuthor)
+        if author:
+            for nAuthor in author:
+                update_set_reference(self.book_key, 'book:author-', None, nAuthor)
 
     def set_quantity(self, quantity):
         if not type(quantity) == int:
@@ -150,25 +164,24 @@ class BookProxy:
         self.book.quantity = quantity
 
     def get_quantity(self):
-        self.fetch()
         return self.book.quantity
 
     def set_page_num(self, page_num):
         self.book.page_num = page_num
 
     def get_borrower_num(self):
-        return get_memcached().scard('book:checkoutby-' + self.book_key)
+        return len(get_set('book:checkoutby-' + self.book_key))
 
     def is_borrower(self, borrowerProxy):
-        return get_memcached().sismember('book:checkoutby-' + self.book_key, borrowerProxy.borrower_key)
+        return borrowerProxy.borrower_key in get_set('book:checkoutby-' + self.book_key)
 
     def add_borrower(self, borrowerProxy):
-        get_memcached().sadd('book:checkoutby-' + self.book_key, borrowerProxy.borrower_key)
-        get_memcached().sadd('borrower:checkoutby-' + borrowerProxy.borrower_key, self.book_key)
+        update_set_reference(borrowerProxy.borrower_key, 'book:checkoutby-', None, self.book_key)
+        update_set_reference(self.book_key, 'borrower:checkoutby-', None, borrowerProxy.borrower_key)
 
     def remove_borrower(self, borrowerProxy):
-        get_memcached().srem('book:checkoutby-' + self.book_key, borrowerProxy.borrower_key)
-        get_memcached().srem('borrower:checkoutby-' + borrowerProxy.borrower_key, self.book_key)
+        update_set_reference(borrowerProxy.borrower_key, 'book:checkoutby-', self.book_key, None)
+        update_set_reference(self.book_key, 'borrower:checkoutby-', borrowerProxy.borrower_key, None)
 
 
 class BorrowerProxy:
@@ -178,7 +191,7 @@ class BorrowerProxy:
         self.borrower = str_to_borrower(get_memcached().get(self.borrower_key))
 
     def exists(self):
-        return self.borrower != None
+        return self.borrower is not None
 
     def save(self):
         get_memcached().set(self.borrower_key, borrower_to_str(self.borrower))
@@ -206,7 +219,7 @@ class BorrowerProxy:
         self.borrower.phone = phone
 
     def get_borrowed_book_num(self):
-        return get_memcached().scard('borrower:checkoutby-' + self.borrower_key)
+        return len(get_set('borrower:checkoutby-' + self.borrower_key))
 
 
 class MemcachedLibrary(Library):
@@ -236,27 +249,35 @@ class MemcachedLibrary(Library):
         proxy = BookProxy(isbn)
         if not proxy.exists():
             raise Exception('book_not_exists')
-        if book.quantity != None and book.quantity < proxy.get_borrower_num():
+        if book.quantity is not None and book.quantity < proxy.get_borrower_num():
             raise Exception('book_borrowed')
         proxy.edit(book, override)
 
     def search_by_title(self, title):
-        return BookProxy.get_books(get_memcached().smembers('book:title-' + title))
+        return get_books(get_set('book:title-' + title))
 
     def search_by_author(self, author):
-        return BookProxy.get_books(get_memcached().smembers('book:author-' + author))
+        return get_books(get_set('book:author-' + author))
 
     def sort_by_title(self):  # return all books
-        return BookProxy.get_books(get_memcached().sort('book:keys', by='*->title', alpha=True))
+        books = get_books(get_set('book:keys'))
+        books.sort(key=lambda b: b.title)
+        return books
 
     def sort_by_author(self):  # return all books
-        return BookProxy.get_books(get_memcached().sort('book:keys', by='*->author', alpha=True))
+        books = get_books(get_set('book:keys'))
+        books.sort(key=lambda b: b.author)
+        return books
 
     def sort_by_isbn(self):  # return all books
-        return BookProxy.get_books(get_memcached().sort('book:keys', alpha=True))
+        books = get_books(get_set('book:keys'))
+        books.sort(key=lambda b: b.isbn)
+        return books
 
     def sort_by_page_num(self):  # return all books
-        return BookProxy.get_books(get_memcached().sort('book:keys', by='*->page_num', alpha=True))
+        books = get_books(get_set('book:keys'))
+        books.sort(key=lambda b: b.page_num)
+        return books
 
     def add_borrower(self, borrower):
         Library.add_borrower(self, borrower)
@@ -283,7 +304,7 @@ class MemcachedLibrary(Library):
         proxy.edit(borrower)
 
     def search_by_name(self, name):
-        return BorrowerProxy.get_borrowers(get_memcached().smembers('borrower:name-' + name))
+        return get_borrowers(get_set('borrower:name-' + name))
 
     def checkout_book(self, username, isbn):
         borrowerProxy = BorrowerProxy(username)
@@ -315,10 +336,10 @@ class MemcachedLibrary(Library):
         proxy = BookProxy(isbn)
         if not proxy.exists():
             raise Exception('book_not_exists')
-        return BorrowerProxy.get_borrowers(get_memcached().smembers('book:checkoutby-' + proxy.book_key))
+        return get_borrowers(get_set('book:checkoutby-' + proxy.book_key))
 
     def get_borrowed_books(self, username):
         proxy = BorrowerProxy(username)
         if not proxy.exists():
             raise Exception('borrower_not_exists')
-        return BookProxy.get_books(get_memcached().smembers('borrower:checkoutby-' + proxy.borrower_key))
+        return get_books(get_set('borrower:checkoutby-' + proxy.borrower_key))
